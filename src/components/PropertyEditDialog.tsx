@@ -1,52 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-
-interface Property {
-  id: number;
-  name: string;
-  address: string;
-  type: string;
-  bedrooms: number;
-  bathrooms: number;
-  size: string;
-  rent: string;
-  status: string;
-  tenant: string | null;
-}
+import { Property } from "@/hooks/useProperties";
 
 interface PropertyEditDialogProps {
   property: Property | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (property: Property) => void;
+  onSave: (property: Omit<Property, 'id'>) => void;
 }
 
 const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditDialogProps) => {
-  const [formData, setFormData] = useState<Property>({
-    id: 0,
+  const [formData, setFormData] = useState({
     name: "",
     address: "",
     type: "Apartment",
     bedrooms: 1,
     bathrooms: 1,
-    size: "",
-    rent: "",
-    status: "vacant",
-    tenant: null,
-    ...property
+    size: 0,
+    rent: 0,
+    status: "available" as 'available' | 'occupied',
   });
+
+  useEffect(() => {
+    if (property) {
+      setFormData({
+        name: property.name,
+        address: property.address,
+        type: property.type,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        size: property.size,
+        rent: property.rent,
+        status: property.status,
+      });
+    } else {
+      setFormData({
+        name: "",
+        address: "",
+        type: "Apartment",
+        bedrooms: 1,
+        bathrooms: 1,
+        size: 0,
+        rent: 0,
+        status: "available",
+      });
+    }
+  }, [property]);
 
   const handleSave = () => {
     onSave(formData);
-    onClose();
   };
 
-  const handleInputChange = (field: keyof Property, value: string | number | null) => {
+  const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -89,7 +98,7 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
                   <SelectItem value="Apartment">Apartment</SelectItem>
                   <SelectItem value="Villa">Villa</SelectItem>
                   <SelectItem value="House">House</SelectItem>
-                  <SelectItem value="Penthouse">Penthouse</SelectItem>
+                  <SelectItem value="Loft">Loft</SelectItem>
                   <SelectItem value="Studio">Studio</SelectItem>
                 </SelectContent>
               </Select>
@@ -100,13 +109,12 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
             <Label htmlFor="address" className="text-sm font-medium text-foreground">
               Address
             </Label>
-            <Textarea
+            <Input
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange("address", e.target.value)}
               placeholder="Enter full address"
-              className="bg-background border-border resize-none"
-              rows={2}
+              className="bg-background border-border"
             />
           </div>
 
@@ -145,9 +153,10 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
               </Label>
               <Input
                 id="size"
+                type="number"
+                min="0"
                 value={formData.size}
-                onChange={(e) => handleInputChange("size", e.target.value)}
-                placeholder="e.g., 1,200 sqft"
+                onChange={(e) => handleInputChange("size", parseInt(e.target.value) || 0)}
                 className="bg-background border-border"
               />
             </div>
@@ -156,13 +165,15 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rent" className="text-sm font-medium text-foreground">
-                Monthly Rent
+                Monthly Rent (₦)
               </Label>
               <Input
                 id="rent"
+                type="number"
+                min="0"
                 value={formData.rent}
-                onChange={(e) => handleInputChange("rent", e.target.value)}
-                placeholder="e.g., ₦180,000"
+                onChange={(e) => handleInputChange("rent", parseInt(e.target.value) || 0)}
+                placeholder="Enter rent amount"
                 className="bg-background border-border"
               />
             </div>
@@ -171,33 +182,17 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
               <Label htmlFor="status" className="text-sm font-medium text-foreground">
                 Status
               </Label>
-              <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
+              <Select value={formData.status} onValueChange={(value: 'available' | 'occupied') => handleInputChange("status", value)}>
                 <SelectTrigger className="bg-background border-border">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
+                  <SelectItem value="available">Available</SelectItem>
                   <SelectItem value="occupied">Occupied</SelectItem>
-                  <SelectItem value="vacant">Vacant</SelectItem>
-                  <SelectItem value="maintenance">Under Maintenance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-
-          {formData.status === "occupied" && (
-            <div className="space-y-2">
-              <Label htmlFor="tenant" className="text-sm font-medium text-foreground">
-                Tenant Name
-              </Label>
-              <Input
-                id="tenant"
-                value={formData.tenant || ""}
-                onChange={(e) => handleInputChange("tenant", e.target.value || null)}
-                placeholder="Enter tenant name"
-                className="bg-background border-border"
-              />
-            </div>
-          )}
         </div>
 
         <DialogFooter className="flex space-x-2">

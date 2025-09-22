@@ -1,93 +1,49 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, Bed, Bath, Square, Users, DollarSign, Building, Edit } from "lucide-react";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Building, MapPin, Bed, Bath, Square, DollarSign, User, Loader2 } from "lucide-react";
 import PropertyEditDialog from "./PropertyEditDialog";
-
-interface Property {
-  id: number;
-  name: string;
-  address: string;
-  type: string;
-  bedrooms: number;
-  bathrooms: number;
-  size: string;
-  rent: string;
-  status: string;
-  tenant: string | null;
-}
+import { useProperties, type Property } from "@/hooks/useProperties";
 
 const Properties = () => {
-  const [properties, setProperties] = useState<Property[]>([
-    {
-      id: 1,
-      name: "Lagos Heights Apartment",
-      address: "Victoria Island, Lagos",
-      type: "Apartment",
-      bedrooms: 3,
-      bathrooms: 2,
-      size: "1,200 sqft",
-      rent: "₦180,000",
-      status: "occupied",
-      tenant: "John Doe"
-    },
-    {
-      id: 2,
-      name: "Victoria Garden Villa",
-      address: "Lekki Phase 1, Lagos",
-      type: "Villa",
-      bedrooms: 4,
-      bathrooms: 3,
-      size: "2,500 sqft",
-      rent: "₦420,000",
-      status: "vacant",
-      tenant: null
-    },
-    {
-      id: 3,
-      name: "Ikoyi Towers Penthouse",
-      address: "Ikoyi, Lagos",
-      type: "Penthouse",
-      bedrooms: 5,
-      bathrooms: 4,
-      size: "3,200 sqft",
-      rent: "₦850,000",
-      status: "occupied",
-      tenant: "Sarah Wilson"
-    },
-    {
-      id: 4,
-      name: "Surulere Complex",
-      address: "Surulere, Lagos",
-      type: "Apartment",
-      bedrooms: 2,
-      bathrooms: 1,
-      size: "800 sqft",
-      rent: "₦120,000",
-      status: "maintenance",
-      tenant: null
-    }
-  ]);
-
+  const { properties, loading, addProperty, updateProperty } = useProperties();
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleEditProperty = (property: Property) => {
     setEditingProperty(property);
-    setIsEditDialogOpen(true);
+    setIsDialogOpen(true);
   };
 
-  const handleSaveProperty = (updatedProperty: Property) => {
-    setProperties(prev => 
-      prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
-    );
+  const handleSaveProperty = async (propertyData: Omit<Property, 'id'>) => {
+    try {
+      if (editingProperty) {
+        // Update existing property
+        await updateProperty(editingProperty.id, propertyData);
+      } else {
+        // Add new property
+        await addProperty(propertyData);
+      }
+      setIsDialogOpen(false);
+      setEditingProperty(null);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
   };
 
   const handleAddProperty = () => {
     setEditingProperty(null);
-    setIsEditDialogOpen(true);
+    setIsDialogOpen(true);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -101,7 +57,7 @@ const Properties = () => {
           className="bg-gradient-primary text-white shadow-elegant hover:shadow-lg transition-all"
           onClick={handleAddProperty}
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Building className="w-4 h-4 mr-2" />
           Add Property
         </Button>
       </div>
@@ -109,19 +65,15 @@ const Properties = () => {
       {/* Properties Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {properties.map((property) => (
-          <Card key={property.id} className="bg-gradient-card shadow-card hover:shadow-elegant transition-all cursor-pointer">
-            <div className="aspect-video bg-muted rounded-t-lg flex items-center justify-center">
-              <Building className="w-12 h-12 text-muted-foreground" />
-            </div>
-            
-            <CardHeader className="pb-2">
+          <Card key={property.id} className="bg-gradient-card shadow-card hover:shadow-elegant transition-all">
+            <CardHeader className="pb-4">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg font-semibold text-foreground">
                   {property.name}
                 </CardTitle>
                 <Badge 
-                  variant={property.status === 'occupied' ? 'default' : property.status === 'vacant' ? 'secondary' : 'destructive'}
-                  className={property.status === 'occupied' ? 'bg-success text-success-foreground' : property.status === 'vacant' ? 'bg-warning text-warning-foreground' : ''}
+                  variant={property.status === 'occupied' ? 'default' : 'secondary'}
+                  className={property.status === 'occupied' ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'}
                 >
                   {property.status}
                 </Badge>
@@ -145,7 +97,7 @@ const Properties = () => {
                 </div>
                 <div className="flex flex-col items-center">
                   <Square className="w-4 h-4 text-primary mb-1" />
-                  <span className="text-sm text-muted-foreground">{property.size}</span>
+                  <span className="text-sm text-muted-foreground">{property.size} sqft</span>
                 </div>
               </div>
 
@@ -154,11 +106,11 @@ const Properties = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <DollarSign className="w-4 h-4 text-success mr-1" />
-                    <span className="font-semibold text-foreground">{property.rent}/month</span>
+                    <span className="font-semibold text-foreground">₦{property.rent.toLocaleString()}/month</span>
                   </div>
                   {property.tenant && (
                     <div className="flex items-center text-muted-foreground text-sm">
-                      <Users className="w-4 h-4 mr-1" />
+                      <User className="w-4 h-4 mr-1" />
                       {property.tenant}
                     </div>
                   )}
@@ -176,7 +128,6 @@ const Properties = () => {
                   className="flex-1"
                   onClick={() => handleEditProperty(property)}
                 >
-                  <Edit className="w-4 h-4 mr-1" />
                   Edit
                 </Button>
               </div>
@@ -187,8 +138,8 @@ const Properties = () => {
 
       <PropertyEditDialog
         property={editingProperty}
-        isOpen={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
         onSave={handleSaveProperty}
       />
     </div>

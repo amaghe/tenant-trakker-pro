@@ -1,52 +1,89 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Users, DollarSign, TrendingUp, Calendar, AlertCircle } from "lucide-react";
+import { Building, Users, DollarSign, TrendingUp, Calendar, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useProperties } from "@/hooks/useProperties";
+import { useTenants } from "@/hooks/useTenants";
+import { usePayments } from "@/hooks/usePayments";
+import { useMemo } from "react";
 
 const Dashboard = () => {
-  const stats = [
-    {
-      title: "Total Properties",
-      value: "24",
-      change: "+2 this month",
-      icon: Building,
-      positive: true,
-    },
-    {
-      title: "Active Tenants",
-      value: "87",
-      change: "+5 this month",
-      icon: Users,
-      positive: true,
-    },
-    {
-      title: "Monthly Revenue",
-      value: "₦2,450,000",
-      change: "+12% from last month",
-      icon: DollarSign,
-      positive: true,
-    },
-    {
-      title: "Collection Rate",
-      value: "94.2%",
-      change: "-2% from last month",
-      icon: TrendingUp,
-      positive: false,
-    },
-  ];
+  const { properties, loading: propertiesLoading } = useProperties();
+  const { tenants, loading: tenantsLoading } = useTenants();
+  const { payments, loading: paymentsLoading } = usePayments();
 
-  const recentPayments = [
-    { tenant: "John Doe", property: "Lagos Heights Apt 2B", amount: "₦180,000", status: "paid", date: "Today" },
-    { tenant: "Sarah Wilson", property: "Victoria Garden 5A", amount: "₦220,000", status: "pending", date: "Yesterday" },
-    { tenant: "Mike Johnson", property: "Ikoyi Towers 12F", amount: "₦350,000", status: "paid", date: "2 days ago" },
-    { tenant: "Emma Brown", property: "Lekki Phase 1 House", amount: "₦420,000", status: "overdue", date: "5 days ago" },
-  ];
+  const stats = useMemo(() => {
+    const totalProperties = properties.length;
+    const activeTenants = tenants.filter(t => t.status === 'active').length;
+    const monthlyRevenue = tenants.reduce((sum, tenant) => sum + tenant.rent, 0);
+    const paidPayments = payments.filter(p => p.status === 'paid').length;
+    const collectionRate = payments.length > 0 ? (paidPayments / payments.length) * 100 : 0;
 
-  const upcomingRent = [
-    { tenant: "David Smith", property: "Marina View 8B", amount: "₦280,000", dueDate: "Jan 31" },
-    { tenant: "Lisa Garcia", property: "Banana Island Villa", amount: "₦850,000", dueDate: "Feb 1" },
-    { tenant: "Tom Wilson", property: "Surulere Complex 4C", amount: "₦160,000", dueDate: "Feb 2" },
-  ];
+    return [
+      {
+        title: "Total Properties",
+        value: totalProperties.toString(),
+        change: `${properties.filter(p => p.status === 'available').length} available`,
+        icon: Building,
+        positive: true,
+      },
+      {
+        title: "Active Tenants", 
+        value: activeTenants.toString(),
+        change: `${tenants.filter(t => t.status === 'overdue').length} overdue`,
+        icon: Users,
+        positive: tenants.filter(t => t.status === 'overdue').length === 0,
+      },
+      {
+        title: "Monthly Revenue",
+        value: `₦${monthlyRevenue.toLocaleString()}`,
+        change: `${tenants.length} tenants`,
+        icon: DollarSign,
+        positive: true,
+      },
+      {
+        title: "Collection Rate",
+        value: `${collectionRate.toFixed(1)}%`,
+        change: `${paidPayments}/${payments.length} paid`,
+        icon: TrendingUp,
+        positive: collectionRate >= 90,
+      },
+    ];
+  }, [properties, tenants, payments]);
+
+  const recentPayments = useMemo(() => 
+    payments
+      .slice(0, 4)
+      .map(payment => ({
+        tenant: payment.tenant?.name || 'Unknown',
+        property: payment.property?.name || 'Unknown',
+        amount: `₦${payment.amount.toLocaleString()}`,
+        status: payment.status,
+        date: payment.paid_date ? new Date(payment.paid_date).toLocaleDateString() : new Date(payment.created_at || '').toLocaleDateString()
+      })),
+    [payments]
+  );
+
+  const upcomingRent = useMemo(() =>
+    payments
+      .filter(p => p.status === 'pending' || p.status === 'overdue')
+      .slice(0, 3)
+      .map(payment => ({
+        tenant: payment.tenant?.name || 'Unknown',
+        property: payment.property?.name || 'Unknown', 
+        amount: `₦${payment.amount.toLocaleString()}`,
+        dueDate: new Date(payment.due_date).toLocaleDateString()
+      })),
+    [payments]
+  );
+
+  if (propertiesLoading || tenantsLoading || paymentsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

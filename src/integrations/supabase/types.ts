@@ -14,7 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          paid_date: string | null
+          payment_method: string
+          property_id: string | null
+          status: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date: string
+          id?: string
+          paid_date?: string | null
+          payment_method: string
+          property_id?: string | null
+          status: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          paid_date?: string | null
+          payment_method?: string
+          property_id?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      properties: {
+        Row: {
+          address: string
+          bathrooms: number
+          bedrooms: number
+          created_at: string
+          id: string
+          name: string
+          rent: number
+          size: number
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          bathrooms: number
+          bedrooms: number
+          created_at?: string
+          id?: string
+          name: string
+          rent: number
+          size: number
+          status: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          bathrooms?: number
+          bedrooms?: number
+          created_at?: string
+          id?: string
+          name?: string
+          rent?: number
+          size?: number
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          id: string
+          lease_end: string
+          lease_start: string
+          name: string
+          phone: string
+          property_id: string | null
+          rent: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          lease_end: string
+          lease_start: string
+          name: string
+          phone: string
+          property_id?: string | null
+          rent: number
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          lease_end?: string
+          lease_start?: string
+          name?: string
+          phone?: string
+          property_id?: string | null
+          rent?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
