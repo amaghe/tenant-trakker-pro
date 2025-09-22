@@ -1,11 +1,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, Bed, Bath, Square, Users, DollarSign, Building } from "lucide-react";
+import { Plus, MapPin, Bed, Bath, Square, Users, DollarSign, Building, Edit } from "lucide-react";
 import { useState } from "react";
+import PropertyEditDialog from "./PropertyEditDialog";
+
+interface Property {
+  id: number;
+  name: string;
+  address: string;
+  type: string;
+  bedrooms: number;
+  bathrooms: number;
+  size: string;
+  rent: string;
+  status: string;
+  tenant: string | null;
+}
 
 const Properties = () => {
-  const [properties] = useState([
+  const [properties, setProperties] = useState<Property[]>([
     {
       id: 1,
       name: "Lagos Heights Apartment",
@@ -16,8 +30,7 @@ const Properties = () => {
       size: "1,200 sqft",
       rent: "₦180,000",
       status: "occupied",
-      tenant: "John Doe",
-      image: "/api/placeholder/400/300"
+      tenant: "John Doe"
     },
     {
       id: 2,
@@ -29,8 +42,7 @@ const Properties = () => {
       size: "2,500 sqft",
       rent: "₦420,000",
       status: "vacant",
-      tenant: null,
-      image: "/api/placeholder/400/300"
+      tenant: null
     },
     {
       id: 3,
@@ -42,8 +54,7 @@ const Properties = () => {
       size: "3,200 sqft",
       rent: "₦850,000",
       status: "occupied",
-      tenant: "Sarah Wilson",
-      image: "/api/placeholder/400/300"
+      tenant: "Sarah Wilson"
     },
     {
       id: 4,
@@ -55,10 +66,28 @@ const Properties = () => {
       size: "800 sqft",
       rent: "₦120,000",
       status: "maintenance",
-      tenant: null,
-      image: "/api/placeholder/400/300"
+      tenant: null
     }
   ]);
+
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleEditProperty = (property: Property) => {
+    setEditingProperty(property);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveProperty = (updatedProperty: Property) => {
+    setProperties(prev => 
+      prev.map(p => p.id === updatedProperty.id ? updatedProperty : p)
+    );
+  };
+
+  const handleAddProperty = () => {
+    setEditingProperty(null);
+    setIsEditDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -68,7 +97,10 @@ const Properties = () => {
           <h1 className="text-3xl font-bold text-foreground">Properties</h1>
           <p className="text-muted-foreground mt-1">Manage your property portfolio</p>
         </div>
-        <Button className="bg-gradient-primary text-white shadow-elegant hover:shadow-lg transition-all">
+        <Button 
+          className="bg-gradient-primary text-white shadow-elegant hover:shadow-lg transition-all"
+          onClick={handleAddProperty}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Property
         </Button>
@@ -138,7 +170,13 @@ const Properties = () => {
                 <Button variant="outline" size="sm" className="flex-1">
                   View Details
                 </Button>
-                <Button variant="ghost" size="sm" className="flex-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => handleEditProperty(property)}
+                >
+                  <Edit className="w-4 h-4 mr-1" />
                   Edit
                 </Button>
               </div>
@@ -146,6 +184,13 @@ const Properties = () => {
           </Card>
         ))}
       </div>
+
+      <PropertyEditDialog
+        property={editingProperty}
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSave={handleSaveProperty}
+      />
     </div>
   );
 };
