@@ -142,27 +142,22 @@ const Auth = () => {
             </TabsContent>
           </Tabs>
           
-          {/* Temporarily disabled until Google OAuth is configured */}
-          {false && (
-            <>
-              <div className="relative my-6">
-                <Separator />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-background px-2 text-muted-foreground text-sm">or</span>
-                </div>
-              </div>
-              
-              <Button
-                variant="outline"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-                className="w-full"
-              >
-                <Chrome className="mr-2 h-4 w-4" />
-                Continue with Google
-              </Button>
-            </>
-          )}
+          <div className="relative my-6">
+            <Separator />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-background px-2 text-muted-foreground text-sm">or</span>
+            </div>
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={handleGoogleSignIn}
+            disabled={isLoading}
+            className="w-full"
+          >
+            <Chrome className="mr-2 h-4 w-4" />
+            Continue with Google
+          </Button>
         </CardContent>
       </Card>
     </div>
