@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,18 +15,29 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetEmail, setResetEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
-  const { user, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
+  const [isPasswordResetMode, setIsPasswordResetMode] = useState(false);
+  const { user, session, signIn, signUp, signInWithGoogle, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // Redirect authenticated users to dashboard
+  // Check for password reset flow and redirect authenticated users
   useEffect(() => {
-    if (user) {
+    // Check if we're in password reset mode (user is logged in via reset link)
+    if (user && session && (searchParams.get('type') === 'recovery' || isPasswordResetMode)) {
+      setIsPasswordResetMode(true);
+      return; // Don't redirect, show password reset form
+    }
+    
+    // Redirect authenticated users to dashboard
+    if (user && !isPasswordResetMode) {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, session, navigate, searchParams, isPasswordResetMode]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +86,78 @@ const Auth = () => {
     
     setIsResetLoading(false);
   };
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmNewPassword) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    const result = await updatePassword(newPassword);
+    
+    if (!result.error) {
+      setIsPasswordResetMode(false);
+      setNewPassword('');
+      setConfirmNewPassword('');
+      navigate('/');
+    }
+    
+    setIsLoading(false);
+  };
+
+  // Show password reset form if user is authenticated via reset link
+  if (isPasswordResetMode && user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Building2 className="h-8 w-8 text-primary" />
+              <h1 className="text-2xl font-bold">Property Manager</h1>
+            </div>
+            <CardTitle>Set New Password</CardTitle>
+            <CardDescription>
+              Enter your new password below
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordUpdate} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+                <Input
+                  id="confirm-new-password"
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading || newPassword !== confirmNewPassword || !newPassword}
+              >
+                {isLoading ? "Updating password..." : "Update Password"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
