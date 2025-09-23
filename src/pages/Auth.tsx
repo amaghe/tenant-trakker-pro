@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { Chrome, Building2 } from 'lucide-react';
 
@@ -13,8 +14,11 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const { user, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   // Redirect authenticated users to dashboard
@@ -56,6 +60,20 @@ const Auth = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsResetLoading(true);
+    
+    const result = await resetPassword(resetEmail);
+    
+    if (!result.error) {
+      setIsResetDialogOpen(false);
+      setResetEmail('');
+    }
+    
+    setIsResetLoading(false);
   };
 
   return (
@@ -105,6 +123,50 @@ const Auth = () => {
                   {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
+              
+              <div className="text-center">
+                <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="link" className="text-sm text-muted-foreground hover:text-primary">
+                      Forgot your password?
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Reset Password</DialogTitle>
+                      <DialogDescription>
+                        Enter your email address and we'll send you a link to reset your password.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handlePasswordReset} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="reset-email">Email</Label>
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          placeholder="admin@example.com"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="flex-1" 
+                          onClick={() => setIsResetDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button type="submit" className="flex-1" disabled={isResetLoading}>
+                          {isResetLoading ? "Sending..." : "Send Reset Link"}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">

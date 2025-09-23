@@ -42,11 +42,20 @@ export const useAuth = () => {
       });
 
       if (error) {
-        toast({
-          title: "Sign up failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        // Handle duplicate account more gracefully
+        if (error.message.includes('already registered')) {
+          toast({
+            title: "Account already exists",
+            description: "This email is already registered. Please sign in instead.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Sign up failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         return { error };
       }
 
@@ -60,6 +69,40 @@ export const useAuth = () => {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast({
         title: "Sign up failed", 
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return { error: { message: errorMessage } };
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+      });
+
+      if (error) {
+        toast({
+          title: "Password reset failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { error };
+      }
+
+      toast({
+        title: "Check your email",
+        description: "We've sent you a password reset link.",
+      });
+
+      return { error: null };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast({
+        title: "Password reset failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -168,5 +211,6 @@ export const useAuth = () => {
     signIn,
     signInWithGoogle,
     signOut,
+    resetPassword,
   };
 };
