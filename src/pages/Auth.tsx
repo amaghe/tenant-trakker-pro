@@ -27,14 +27,16 @@ const Auth = () => {
 
   // Check for password reset flow and redirect authenticated users
   useEffect(() => {
-    // Check if we're in password reset mode (user is logged in via reset link)
-    if (user && session && (searchParams.get('type') === 'recovery' || isPasswordResetMode)) {
+    const urlType = searchParams.get('type');
+    
+    // Check if we're in password reset mode (user clicked reset link)
+    if (urlType === 'recovery' && user && session) {
       setIsPasswordResetMode(true);
       return; // Don't redirect, show password reset form
     }
     
-    // Redirect authenticated users to dashboard
-    if (user && !isPasswordResetMode) {
+    // Redirect authenticated users to dashboard (but not during password reset)
+    if (user && !isPasswordResetMode && urlType !== 'recovery') {
       navigate('/');
     }
   }, [user, session, navigate, searchParams, isPasswordResetMode]);

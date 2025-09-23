@@ -78,7 +78,7 @@ export const useAuth = () => {
 
   const resetPassword = async (email: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = `${window.location.origin}/auth?type=recovery`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl
@@ -95,7 +95,7 @@ export const useAuth = () => {
 
       toast({
         title: "Check your email",
-        description: "We've sent you a password reset link.",
+        description: "If an account with this email exists, we've sent you a password reset link.",
       });
 
       return { error: null };
