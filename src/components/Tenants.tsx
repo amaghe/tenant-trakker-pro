@@ -56,6 +56,8 @@ const Tenants = () => {
   };
 
   const handleSendPaymentRequest = async (tenant: any) => {
+    if (mtnLoading) return; // Prevent double submission
+    
     try {
       const amount = paymentAmount || tenant.rent;
       
