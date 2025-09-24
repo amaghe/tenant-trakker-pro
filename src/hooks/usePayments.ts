@@ -147,6 +147,27 @@ export const usePayments = () => {
 
   useEffect(() => {
     fetchPayments();
+
+    // Set up real-time subscription for payment updates
+    const channel = supabase
+      .channel('payments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payments'
+        },
+        (payload) => {
+          console.log('Payment change received:', payload);
+          fetchPayments(); // Refetch all payments when any change occurs
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return {

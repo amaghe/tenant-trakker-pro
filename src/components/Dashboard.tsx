@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Users, DollarSign, TrendingUp, Calendar, AlertCircle, Loader2 } from "lucide-react";
+import { Building, Users, DollarSign, TrendingUp, Calendar, AlertCircle, Loader2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProperties } from "@/hooks/useProperties";
@@ -17,6 +17,7 @@ const Dashboard = () => {
     const activeTenants = tenants.filter(t => t.status === 'active').length;
     const monthlyRevenue = tenants.reduce((sum, tenant) => sum + tenant.rent, 0);
     const paidPayments = payments.filter(p => p.status === 'paid').length;
+    const mtnPaymentRequests = payments.filter(p => p.payment_method === 'MTN Mobile Money' && p.status === 'pending').length;
     const collectionRate = payments.length > 0 ? (paidPayments / payments.length) * 100 : 0;
 
     return [
@@ -39,6 +40,13 @@ const Dashboard = () => {
         value: `₦${monthlyRevenue.toLocaleString()}`,
         change: `${tenants.length} tenants`,
         icon: DollarSign,
+        positive: true,
+      },
+      {
+        title: "Payment Requests",
+        value: mtnPaymentRequests.toString(),
+        change: `MTN MoMo sent`,
+        icon: Smartphone,
         positive: true,
       },
       {
@@ -100,7 +108,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (

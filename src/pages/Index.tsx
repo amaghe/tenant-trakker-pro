@@ -6,6 +6,7 @@ import Properties from "@/components/Properties";
 import Tenants from "@/components/Tenants";
 import Payments from "@/components/Payments";
 import { useAuth } from "@/hooks/useAuth";
+import { usePaymentNotifications } from "@/hooks/usePaymentNotifications";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
 
@@ -13,6 +14,9 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+
+  // Enable payment notifications across the app
+  usePaymentNotifications();
 
   // Redirect to auth page if not authenticated
   useEffect(() => {

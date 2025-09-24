@@ -8,16 +8,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Phone, MapPin, Calendar, DollarSign, Loader2, UserPlus, Edit2, Trash2, Users, MessageCircle, Smartphone, Send } from "lucide-react";
 import { useTenants } from "@/hooks/useTenants";
+import { usePayments } from "@/hooks/usePayments";
 import { useMtnMomo } from "@/hooks/useMtnMomo";
 import TenantFormDialog from "./TenantFormDialog";
 import { useState } from "react";
 
 const Tenants = () => {
   const { tenants, loading, addTenant, updateTenant, deleteTenant } = useTenants();
+  const { payments, addPayment, refetch: refetchPayments } = usePayments();
   const { loading: mtnLoading, requestPayment } = useMtnMomo();
   const [formLoading, setFormLoading] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
+
+  // Helper function to get recent payment status for a tenant
+  const getTenantPaymentStatus = (tenantId: string) => {
+    const tenantPayments = payments.filter(p => p.tenant_id === tenantId);
+    const recentPayment = tenantPayments
+      .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())[0];
+    return recentPayment;
+  };
 
   const handleAddTenant = async (tenantData: any) => {
     setFormLoading(true);
@@ -47,15 +57,34 @@ const Tenants = () => {
 
   const handleSendPaymentRequest = async (tenant: any) => {
     try {
+      const amount = paymentAmount || tenant.rent;
+      
+      // First create a payment record
+      const today = new Date();
+      const dueDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30); // 30 days from now
+      
+      const paymentRecord = await addPayment({
+        tenant_id: tenant.id,
+        property_id: tenant.property_id || '',
+        amount: amount,
+        status: 'pending',
+        payment_method: 'MTN Mobile Money',
+        due_date: dueDate.toISOString().split('T')[0],
+      });
+
+      // Then send the MTN MoMo request with the payment ID
       const referenceId = await requestPayment({
         phoneNumber: tenant.phone,
-        amount: paymentAmount || tenant.rent,
+        amount: amount,
         tenantId: tenant.id,
+        paymentId: paymentRecord?.id,
       });
 
       if (referenceId) {
         setPaymentDialogOpen(null);
         setPaymentAmount(0);
+        // Refresh payments to show the new request
+        await refetchPayments();
       }
     } catch (error) {
       console.error('Error sending payment request:', error);
@@ -164,7 +193,10 @@ const Tenants = () => {
 
       {/* Tenants Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {tenants.map((tenant) => (
+        {tenants.map((tenant) => {
+          const recentPayment = getTenantPaymentStatus(tenant.id);
+          
+          return (
           <Card key={tenant.id} className="bg-gradient-card shadow-card hover:shadow-elegant transition-all">
             <CardHeader className="pb-4">
               <div className="flex items-start space-x-4">
@@ -182,12 +214,24 @@ const Tenants = () => {
                       {tenant.property ? `${tenant.property.name} - ${tenant.property.address}` : 'No property assigned'}
                     </span>
                   </div>
-                  <Badge 
-                    variant={getStatusColor(tenant.status)} 
-                    className="mt-2"
-                  >
-                    {tenant.status}
-                  </Badge>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge 
+                      variant={getStatusColor(tenant.status)} 
+                      className="mt-0"
+                    >
+                      {tenant.status}
+                    </Badge>
+                    {recentPayment && (
+                      <Badge 
+                        variant={recentPayment.status === 'paid' ? 'default' : recentPayment.status === 'pending' ? 'secondary' : 'destructive'}
+                        className="text-xs"
+                      >
+                        {recentPayment.status === 'pending' ? 'Payment Requested' : 
+                         recentPayment.status === 'paid' ? 'Recently Paid' : 
+                         'Payment Overdue'}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -306,7 +350,7 @@ const Tenants = () => {
               </div>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
 
       {tenants.length === 0 && (

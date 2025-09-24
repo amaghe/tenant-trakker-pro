@@ -385,19 +385,30 @@ const Payments = () => {
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-bold text-foreground">₦{payment.amount.toLocaleString()}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge 
-                              variant={getStatusColor(payment.status)}
-                              className={payment.status === 'overdue' ? 'bg-destructive/10 text-destructive border-destructive/20' : ''}
-                            >
-                              {payment.status}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">Due: {new Date(payment.due_date).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center space-x-1 mt-1">
-                            {getPaymentMethodIcon(payment.payment_method)}
-                            <span className="text-xs text-muted-foreground">{payment.payment_method}</span>
-                          </div>
+                           <div className="flex items-center space-x-2 mt-1">
+                             <Badge 
+                               variant={getStatusColor(payment.status)}
+                               className={payment.status === 'overdue' ? 'bg-destructive/10 text-destructive border-destructive/20' : ''}
+                             >
+                               {payment.status}
+                             </Badge>
+                             <span className="text-xs text-muted-foreground">Due: {new Date(payment.due_date).toLocaleDateString()}</span>
+                             {payment.payment_method === 'MTN Mobile Money' && payment.status === 'pending' && (
+                               <Badge variant="outline" className="bg-info/10 text-info border-info/20">
+                                 <Smartphone className="w-3 h-3 mr-1" />
+                                 SMS Sent
+                               </Badge>
+                             )}
+                           </div>
+                           <div className="flex items-center space-x-1 mt-1">
+                             {getPaymentMethodIcon(payment.payment_method)}
+                             <span className="text-xs text-muted-foreground">{payment.payment_method}</span>
+                             {payment.created_at && (
+                               <span className="text-xs text-muted-foreground">
+                                 • Created {new Date(payment.created_at).toLocaleDateString()}
+                               </span>
+                             )}
+                           </div>
                            <div className="flex space-x-2 mt-3">
                              <Button 
                                size="sm" 
