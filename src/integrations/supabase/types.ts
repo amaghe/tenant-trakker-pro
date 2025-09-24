@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      debug_logs: {
+        Row: {
+          created_at: string
+          function_name: string
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          function_name: string
+          id?: string
+          level?: string
+          message: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          function_name?: string
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
