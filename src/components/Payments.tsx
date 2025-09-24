@@ -19,6 +19,7 @@ const Payments = () => {
   } = useMtnMomo();
   
   const [walletBalance, setWalletBalance] = useState<any>(null);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
   const [showMtnPayment, setShowMtnPayment] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
 
@@ -27,8 +28,14 @@ const Payments = () => {
   }, []);
 
   const loadWalletBalance = async () => {
-    const balance = await getAccountBalance();
-    setWalletBalance(balance);
+    try {
+      setBalanceError(null);
+      const balance = await getAccountBalance();
+      setWalletBalance(balance);
+    } catch (error: any) {
+      setBalanceError(error.message || 'Failed to load balance');
+      console.error('Balance error:', error);
+    }
   };
 
   const handleMtnPayment = async (paymentId: string, amount: number) => {
@@ -129,9 +136,25 @@ const Payments = () => {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold text-foreground">
-                {walletBalance ? `${walletBalance.currency} ${walletBalance.availableBalance}` : 'Loading...'}
+                {balanceError ? (
+                  <div className="text-destructive text-sm">
+                    <AlertCircle className="w-4 h-4 inline mr-1" />
+                    Error: {balanceError}
+                  </div>
+                ) : walletBalance ? (
+                  `${walletBalance.currency} ${walletBalance.availableBalance}`
+                ) : (
+                  mtnLoading ? 'Loading...' : 'Not loaded'
+                )}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Available Balance</p>
+              {!balanceError && (
+                <p className="text-xs text-muted-foreground mt-1">Available Balance</p>
+              )}
+              {balanceError && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click refresh to retry
+                </p>
+              )}
             </div>
             <Button 
               size="sm" 
