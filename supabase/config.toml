@@ -1,1 +1,19 @@
 project_id = "txmafyswuzslwlixszmf"
+
+[functions.mtn-momo-balance]
+verify_jwt = false
+
+[functions.mtn-momo-callback]
+verify_jwt = false
+
+[functions.mtn-momo-invoice]
+verify_jwt = false
+
+[functions.mtn-momo-request-payment]
+verify_jwt = false
+
+[functions.mtn-momo-transaction-status]
+verify_jwt = false
+
+[functions.debug-logger]
+verify_jwt = false

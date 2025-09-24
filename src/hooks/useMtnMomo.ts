@@ -62,11 +62,23 @@ export const useMtnMomo = () => {
   const requestPayment = async (request: PaymentRequest): Promise<string | null> => {
     setLoading(true);
     try {
+      // Validate input parameters
+      if (!request.phoneNumber || !request.amount) {
+        throw new Error('Phone number and amount are required');
+      }
+
+      if (request.amount <= 0) {
+        throw new Error('Amount must be greater than 0');
+      }
+
       const { data, error } = await supabase.functions.invoke('mtn-momo-request-payment', {
         body: request
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`Request failed: ${error.message}`);
+      }
 
       if (!data.success) {
         throw new Error(data.error || 'Failed to request payment');
@@ -80,9 +92,10 @@ export const useMtnMomo = () => {
       return data.referenceId;
     } catch (error) {
       console.error('Error requesting MTN MoMo payment:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to request payment';
       toast({
         title: "Error",
-        description: "Failed to request payment",
+        description: errorMessage,
         variant: "destructive",
       });
       return null;
@@ -94,22 +107,38 @@ export const useMtnMomo = () => {
   const checkTransactionStatus = async (referenceId: string, paymentId?: string) => {
     setLoading(true);
     try {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(referenceId)) {
+        throw new Error('Invalid reference ID format. Must be a valid UUID.');
+      }
+
       const { data, error } = await supabase.functions.invoke('mtn-momo-transaction-status', {
         body: { referenceId, paymentId }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(`Status check failed: ${error.message}`);
+      }
 
       if (!data.success) {
         throw new Error(data.error || 'Failed to check transaction status');
       }
 
-      return data.transaction;
+      // Return standardized status
+      const transaction = data.transaction;
+      return {
+        ...transaction,
+        status: transaction.status?.toUpperCase(), // Normalize status
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('Error checking MTN MoMo transaction status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to check transaction status';
       toast({
         title: "Error",
-        description: "Failed to check transaction status",
+        description: errorMessage,
         variant: "destructive",
       });
       return null;

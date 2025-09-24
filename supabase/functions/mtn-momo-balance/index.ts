@@ -143,15 +143,18 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     await logDebug('error', 'Error in mtn-momo-balance function', {
-      error: error.message,
-      stack: error.stack
+      error: errorMessage,
+      stack: errorStack
     });
     
     console.error('Error in mtn-momo-balance function:', error);
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message 
+      error: errorMessage 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
