@@ -2,11 +2,63 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Filter, DollarSign, CreditCard, Banknote, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Download, Filter, DollarSign, CreditCard, Banknote, Clock, CheckCircle, AlertCircle, Loader2, Wallet, Smartphone } from "lucide-react";
 import { usePayments } from "@/hooks/usePayments";
+import { useMtnMomo } from "@/hooks/useMtnMomo";
+import { useState, useEffect } from "react";
 
 const Payments = () => {
-  const { payments, loading } = usePayments();
+  const { payments, loading, updatePayment } = usePayments();
+  const { 
+    loading: mtnLoading, 
+    getAccountBalance, 
+    requestPayment, 
+    checkTransactionStatus, 
+    manageInvoice 
+  } = useMtnMomo();
+  
+  const [walletBalance, setWalletBalance] = useState<any>(null);
+  const [showMtnPayment, setShowMtnPayment] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  useEffect(() => {
+    loadWalletBalance();
+  }, []);
+
+  const loadWalletBalance = async () => {
+    const balance = await getAccountBalance();
+    setWalletBalance(balance);
+  };
+
+  const handleMtnPayment = async (paymentId: string, amount: number) => {
+    if (!phoneNumber) {
+      alert('Please enter phone number');
+      return;
+    }
+
+    const referenceId = await requestPayment({
+      phoneNumber,
+      amount,
+      paymentId,
+    });
+
+    if (referenceId) {
+      setShowMtnPayment(null);
+      setPhoneNumber('');
+      // Check status after a short delay
+      setTimeout(() => {
+        checkTransactionStatus(referenceId, paymentId);
+      }, 5000);
+    }
+  };
+
+  const handleMarkPaid = async (paymentId: string) => {
+    await updatePayment(paymentId, { 
+      status: 'paid', 
+      paid_date: new Date().toISOString().split('T')[0] 
+    });
+  };
 
   if (loading) {
     return (
@@ -39,6 +91,9 @@ const Payments = () => {
     if (method.toLowerCase().includes('cash')) {
       return <Banknote className="w-4 h-4 text-primary" />;
     }
+    if (method.toLowerCase().includes('mtn') || method.toLowerCase().includes('mobile')) {
+      return <Smartphone className="w-4 h-4 text-primary" />;
+    }
     return <DollarSign className="w-4 h-4 text-primary" />;
   };
 
@@ -61,6 +116,34 @@ const Payments = () => {
           </Button>
         </div>
       </div>
+
+      {/* MTN MoMo Wallet Balance */}
+      <Card className="bg-gradient-card shadow-card">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            MTN MoMo Wallet Balance
+          </CardTitle>
+          <Wallet className="h-4 w-4 text-primary" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-2xl font-bold text-foreground">
+                {walletBalance ? `${walletBalance.currency} ${walletBalance.availableBalance}` : 'Loading...'}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Available Balance</p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={loadWalletBalance}
+              disabled={mtnLoading}
+            >
+              {mtnLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Refresh'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Payment Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -217,14 +300,57 @@ const Payments = () => {
                             {getPaymentMethodIcon(payment.payment_method)}
                             <span className="text-xs text-muted-foreground">{payment.payment_method}</span>
                           </div>
-                          <div className="flex space-x-2 mt-3">
-                            <Button size="sm" className="bg-success hover:bg-success/90 text-white">
-                              Mark Paid
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              Send Reminder
-                            </Button>
-                          </div>
+                           <div className="flex space-x-2 mt-3">
+                             <Button 
+                               size="sm" 
+                               className="bg-success hover:bg-success/90 text-white"
+                               onClick={() => handleMarkPaid(payment.id)}
+                             >
+                               Mark Paid
+                             </Button>
+                             <Button 
+                               size="sm" 
+                               variant="outline"
+                               onClick={() => setShowMtnPayment(payment.id)}
+                             >
+                               <Smartphone className="w-4 h-4 mr-2" />
+                               MTN Payment
+                             </Button>
+                           </div>
+                           
+                           {/* MTN Payment Modal */}
+                           {showMtnPayment === payment.id && (
+                             <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+                               <h4 className="font-semibold mb-2">Request MTN MoMo Payment</h4>
+                               <div className="space-y-3">
+                                 <div>
+                                   <label className="text-sm font-medium">Tenant Phone Number</label>
+                                   <Input
+                                     placeholder="256XXXXXXXXX"
+                                     value={phoneNumber}
+                                     onChange={(e) => setPhoneNumber(e.target.value)}
+                                   />
+                                 </div>
+                                 <div className="flex space-x-2">
+                                   <Button 
+                                     size="sm"
+                                     onClick={() => handleMtnPayment(payment.id, payment.amount)}
+                                     disabled={mtnLoading}
+                                   >
+                                     {mtnLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                     Send Payment Request
+                                   </Button>
+                                   <Button 
+                                     size="sm" 
+                                     variant="outline"
+                                     onClick={() => setShowMtnPayment(null)}
+                                   >
+                                     Cancel
+                                   </Button>
+                                 </div>
+                               </div>
+                             </div>
+                           )}
                         </div>
                       </div>
                     </CardContent>
