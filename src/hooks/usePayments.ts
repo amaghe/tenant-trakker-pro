@@ -65,7 +65,7 @@ export const usePayments = () => {
     }
   };
 
-  const addPayment = async (paymentData: Omit<Payment, 'id'>) => {
+  const addPayment = async (paymentData: Omit<Payment, 'id'>, showToast = true) => {
     try {
       const { data, error } = await supabase
         .from('payments')
@@ -76,18 +76,24 @@ export const usePayments = () => {
       if (error) throw error;
 
       await fetchPayments(); // Refetch to get tenant/property data
-      toast({
-        title: "Success",
-        description: "Payment added successfully",
-      });
+      
+      if (showToast) {
+        toast({
+          title: "Success",
+          description: "Payment added successfully",
+        });
+      }
+      
       return data;
     } catch (error) {
       console.error('Error adding payment:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add payment",
-        variant: "destructive",
-      });
+      if (showToast) {
+        toast({
+          title: "Error",
+          description: "Failed to add payment",
+          variant: "destructive",
+        });
+      }
       throw error;
     }
   };

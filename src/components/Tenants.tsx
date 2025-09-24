@@ -12,8 +12,10 @@ import { usePayments } from "@/hooks/usePayments";
 import { useMtnMomo } from "@/hooks/useMtnMomo";
 import TenantFormDialog from "./TenantFormDialog";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Tenants = () => {
+  const { toast } = useToast();
   const { tenants, loading, addTenant, updateTenant, deleteTenant } = useTenants();
   const { payments, addPayment, refetch: refetchPayments } = usePayments();
   const { loading: mtnLoading, requestPayment } = useMtnMomo();
@@ -61,7 +63,7 @@ const Tenants = () => {
     try {
       const amount = paymentAmount || tenant.rent;
       
-      // First create a payment record
+      // First create a payment record (without showing toast)
       const today = new Date();
       const dueDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30); // 30 days from now
       
@@ -72,7 +74,7 @@ const Tenants = () => {
         status: 'pending',
         payment_method: 'MTN Mobile Money',
         due_date: dueDate.toISOString().split('T')[0],
-      });
+      }, false); // Don't show toast yet
 
       // Then send the MTN MoMo request with the payment ID
       const referenceId = await requestPayment({
@@ -83,6 +85,12 @@ const Tenants = () => {
       });
 
       if (referenceId) {
+        // Only show success after complete flow succeeds
+        toast({
+          title: "Success",
+          description: "Payment request sent successfully",
+        });
+        
         setPaymentDialogOpen(null);
         setPaymentAmount(0);
         // Refresh payments to show the new request
@@ -90,6 +98,14 @@ const Tenants = () => {
       }
     } catch (error) {
       console.error('Error sending payment request:', error);
+      
+      // Show appropriate error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast({
+        title: "Error",
+        description: `Failed to send payment request: ${errorMessage}`,
+        variant: "destructive",
+      });
     }
   };
 
