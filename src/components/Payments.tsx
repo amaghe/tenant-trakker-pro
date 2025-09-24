@@ -24,16 +24,45 @@ const Payments = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
 
   useEffect(() => {
-    loadWalletBalance();
+    loadCachedBalance();
   }, []);
+
+  const loadCachedBalance = () => {
+    try {
+      const cached = localStorage.getItem('mtn_wallet_balance');
+      if (cached) {
+        const { balance, error, timestamp } = JSON.parse(cached);
+        setWalletBalance(balance);
+        setBalanceError(error);
+      }
+    } catch (error) {
+      console.error('Error loading cached balance:', error);
+    }
+  };
 
   const loadWalletBalance = async () => {
     try {
       setBalanceError(null);
       const balance = await getAccountBalance();
       setWalletBalance(balance);
+      
+      // Cache the successful balance
+      localStorage.setItem('mtn_wallet_balance', JSON.stringify({
+        balance,
+        error: null,
+        timestamp: Date.now()
+      }));
     } catch (error: any) {
-      setBalanceError(error.message || 'Failed to load balance');
+      const errorMessage = error.message || 'Failed to load balance';
+      setBalanceError(errorMessage);
+      
+      // Cache the error
+      localStorage.setItem('mtn_wallet_balance', JSON.stringify({
+        balance: null,
+        error: errorMessage,
+        timestamp: Date.now()
+      }));
+      
       console.error('Balance error:', error);
     }
   };
