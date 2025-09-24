@@ -39,6 +39,27 @@ serve(async (req) => {
       referenceId
     });
 
+    // First, get bearer token for authentication
+    const tokenResponse = await fetch('https://sandbox.momodeveloper.mtn.com/collection/token/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(MTN_USER_REFERENCE_ID + ':' + MTN_USER_API_KEY)}`,
+        'Ocp-Apim-Subscription-Key': MTN_PRIMARY_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!tokenResponse.ok) {
+      const tokenError = await tokenResponse.text();
+      console.error('MTN MoMo token API error:', tokenResponse.status, tokenError);
+      throw new Error(`MTN MoMo token error: ${tokenResponse.status} - ${tokenError}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+    
+    console.log('Bearer token obtained for payment request');
+
     // Request payment from MTN MoMo Collections API
     const requestBody = {
       amount: amount.toString(),
@@ -55,7 +76,7 @@ serve(async (req) => {
     const response = await fetch('https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${MTN_USER_API_KEY}`,
+        'Authorization': `Bearer ${accessToken}`,
         'X-Reference-Id': referenceId,
         'X-Target-Environment': 'sandbox',
         'Ocp-Apim-Subscription-Key': MTN_PRIMARY_KEY,
