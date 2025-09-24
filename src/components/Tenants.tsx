@@ -3,14 +3,21 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Mail, Phone, MapPin, Calendar, DollarSign, Loader2, UserPlus, Edit2, Trash2, Users, MessageCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Mail, Phone, MapPin, Calendar, DollarSign, Loader2, UserPlus, Edit2, Trash2, Users, MessageCircle, Smartphone, Send } from "lucide-react";
 import { useTenants } from "@/hooks/useTenants";
+import { useMtnMomo } from "@/hooks/useMtnMomo";
 import TenantFormDialog from "./TenantFormDialog";
 import { useState } from "react";
 
 const Tenants = () => {
   const { tenants, loading, addTenant, updateTenant, deleteTenant } = useTenants();
+  const { loading: mtnLoading, requestPayment } = useMtnMomo();
   const [formLoading, setFormLoading] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
 
   const handleAddTenant = async (tenantData: any) => {
     setFormLoading(true);
@@ -35,6 +42,23 @@ const Tenants = () => {
       await deleteTenant(tenantId);
     } catch (error) {
       console.error('Error deleting tenant:', error);
+    }
+  };
+
+  const handleSendPaymentRequest = async (tenant: any) => {
+    try {
+      const referenceId = await requestPayment({
+        phoneNumber: tenant.phone,
+        amount: paymentAmount || tenant.rent,
+        tenantId: tenant.id,
+      });
+
+      if (referenceId) {
+        setPaymentDialogOpen(null);
+        setPaymentAmount(0);
+      }
+    } catch (error) {
+      console.error('Error sending payment request:', error);
     }
   };
 
@@ -195,6 +219,54 @@ const Tenants = () => {
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Message
                 </Button>
+                <Dialog open={paymentDialogOpen === tenant.id} onOpenChange={(open) => setPaymentDialogOpen(open ? tenant.id : null)}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex-1 bg-success/10 hover:bg-success/20 text-success border-success/20">
+                      <Smartphone className="w-4 h-4 mr-2" />
+                      Request Payment
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Smartphone className="w-5 h-5 text-success" />
+                        Send Payment Request to {tenant.name}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Phone Number</Label>
+                        <Input value={tenant.phone} disabled className="bg-muted" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Amount (₦)</Label>
+                        <Input
+                          type="number"
+                          value={paymentAmount || tenant.rent}
+                          onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                          placeholder={`Default: ₦${tenant.rent.toLocaleString()}`}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Default is monthly rent amount. You can change it for custom amounts.
+                        </p>
+                      </div>
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button variant="outline" onClick={() => setPaymentDialogOpen(null)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => handleSendPaymentRequest(tenant)}
+                          disabled={mtnLoading}
+                          className="bg-success hover:bg-success/90 text-white"
+                        >
+                          {mtnLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          <Send className="w-4 h-4 mr-2" />
+                          Send Request
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
                 <TenantFormDialog
                   trigger={
                     <Button variant="ghost" size="sm">

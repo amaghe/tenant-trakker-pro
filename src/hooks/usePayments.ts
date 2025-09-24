@@ -13,6 +13,7 @@ export interface Payment {
   paid_date?: string;
   tenant?: {
     name: string;
+    phone: string;
   };
   property?: {
     name: string;
@@ -34,7 +35,7 @@ export const usePayments = () => {
         .from('payments')
         .select(`
           *,
-          tenants(name),
+          tenants(name, phone),
           properties(name, address)
         `)
         .order('created_at', { ascending: false });
@@ -44,7 +45,7 @@ export const usePayments = () => {
       const formattedPayments = data?.map(payment => ({
         ...payment,
         status: payment.status as 'paid' | 'pending' | 'overdue',
-        tenant: payment.tenants ? { name: payment.tenants.name } : undefined,
+        tenant: payment.tenants ? { name: payment.tenants.name, phone: payment.tenants.phone } : undefined,
         property: payment.properties ? {
           name: payment.properties.name,
           address: payment.properties.address

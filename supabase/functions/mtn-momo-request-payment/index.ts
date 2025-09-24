@@ -7,6 +7,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to log to debug table
+async function logDebug(level: string, message: string, metadata?: any, userId?: string) {
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    await supabase.from('debug_logs').insert({
+      function_name: 'mtn-momo-request-payment',
+      level,
+      message,
+      metadata,
+      user_id: userId
+    });
+    
+    console.log(`[${level.toUpperCase()}] ${message}`, metadata || '');
+  } catch (error) {
+    console.error('Failed to log debug message:', error);
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -14,7 +36,16 @@ serve(async (req) => {
   }
 
   try {
+    await logDebug('info', 'Starting MTN MoMo payment request');
     const { phoneNumber, amount, tenantId, paymentId, externalId } = await req.json();
+
+    await logDebug('info', 'Payment request details received', {
+      phoneNumber: phoneNumber?.substring(0, 5) + '***', // Hide full phone number in logs
+      amount,
+      tenantId,
+      paymentId,
+      hasExternalId: !!externalId
+    });
 
     const MTN_PRIMARY_KEY = Deno.env.get('MTN_PRIMARY_KEY');
     const MTN_USER_REFERENCE_ID = Deno.env.get('MTN_USER_REFERENCE_ID');
@@ -23,6 +54,11 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!MTN_PRIMARY_KEY || !MTN_USER_REFERENCE_ID || !MTN_USER_API_KEY) {
+      await logDebug('error', 'Missing MTN MoMo credentials', {
+        hasPrimaryKey: !!MTN_PRIMARY_KEY,
+        hasUserRefId: !!MTN_USER_REFERENCE_ID,
+        hasApiKey: !!MTN_USER_API_KEY
+      });
       throw new Error('Missing MTN MoMo credentials');
     }
 
@@ -31,15 +67,11 @@ serve(async (req) => {
     // Generate unique reference ID for this transaction
     const referenceId = externalId || crypto.randomUUID();
 
-    console.log('Initiating MTN MoMo payment request...', {
-      phoneNumber,
-      amount,
-      tenantId,
-      paymentId,
-      referenceId
-    });
+    await logDebug('info', 'Generated reference ID for transaction', { referenceId });
 
     // First, get bearer token for authentication
+    await logDebug('info', 'Requesting bearer token from MTN MoMo API');
+    
     const tokenResponse = await fetch('https://sandbox.momodeveloper.mtn.com/collection/token/', {
       method: 'POST',
       headers: {
@@ -51,6 +83,11 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const tokenError = await tokenResponse.text();
+      await logDebug('error', 'MTN MoMo token API error', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        error: tokenError
+      });
       console.error('MTN MoMo token API error:', tokenResponse.status, tokenError);
       throw new Error(`MTN MoMo token error: ${tokenResponse.status} - ${tokenError}`);
     }
@@ -58,7 +95,7 @@ serve(async (req) => {
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
     
-    console.log('Bearer token obtained for payment request');
+    await logDebug('info', 'Bearer token obtained successfully');
 
     // Request payment from MTN MoMo Collections API
     const requestBody = {
@@ -69,9 +106,15 @@ serve(async (req) => {
         partyIdType: "MSISDN",
         partyId: phoneNumber
       },
-      payerMessage: "Rent payment",
+      payerMessage: "Rent payment request",
       payeeNote: "Property rent collection"
     };
+
+    await logDebug('info', 'Sending payment request to MTN MoMo API', {
+      amount,
+      currency: "EUR",
+      referenceId
+    });
 
     const response = await fetch('https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay', {
       method: 'POST',
@@ -87,37 +130,54 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      await logDebug('error', 'MTN MoMo request payment API error', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
       console.error('MTN MoMo request payment API error:', response.status, errorText);
       throw new Error(`MTN MoMo API error: ${response.status} - ${errorText}`);
     }
 
-    console.log('Payment request initiated successfully');
+    await logDebug('info', 'Payment request initiated successfully', { referenceId });
 
     // Update payment record with MTN transaction reference
     if (paymentId) {
+      await logDebug('info', 'Updating payment record', { paymentId, referenceId });
+      
       const { error: updateError } = await supabase
         .from('payments')
         .update({ 
           status: 'pending',
-          payment_method: 'mtn_mobile_money',
+          payment_method: 'MTN Mobile Money',
           updated_at: new Date().toISOString()
         })
         .eq('id', paymentId);
 
       if (updateError) {
+        await logDebug('error', 'Error updating payment record', { error: updateError });
         console.error('Error updating payment record:', updateError);
+      } else {
+        await logDebug('info', 'Payment record updated successfully');
       }
     }
+
+    await logDebug('info', 'Payment request completed successfully', { referenceId });
 
     return new Response(JSON.stringify({
       success: true,
       referenceId,
-      message: 'Payment request sent successfully'
+      message: 'Payment request sent successfully to ' + phoneNumber?.substring(0, 5) + '***'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
+    await logDebug('error', 'Error in mtn-momo-request-payment function', {
+      error: error.message,
+      stack: error.stack
+    });
+    
     console.error('Error in mtn-momo-request-payment function:', error);
     return new Response(JSON.stringify({ 
       success: false,

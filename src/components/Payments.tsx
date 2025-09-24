@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Download, Filter, DollarSign, CreditCard, Banknote, Clock, CheckCircle, AlertCircle, Loader2, Wallet, Smartphone } from "lucide-react";
+import { Download, Filter, DollarSign, CreditCard, Banknote, Clock, CheckCircle, AlertCircle, Loader2, Wallet, Smartphone, Send, Users } from "lucide-react";
 import { usePayments } from "@/hooks/usePayments";
 import { useMtnMomo } from "@/hooks/useMtnMomo";
 import { useState, useEffect } from "react";
@@ -89,7 +89,45 @@ const Payments = () => {
     }
   };
 
+  const handleSendBulkPaymentRequests = async () => {
+    const overduePayments = pendingPayments.filter(p => p.status === 'overdue');
+    
+    for (const payment of overduePayments) {
+      if (payment.tenant?.phone) {
+        try {
+          await requestPayment({
+            phoneNumber: payment.tenant.phone,
+            amount: payment.amount,
+            paymentId: payment.id,
+            tenantId: payment.tenant_id || '',
+          });
+        } catch (error) {
+          console.error(`Failed to send payment request to ${payment.tenant.name}:`, error);
+        }
+      }
+    }
+  };
+
   const handleMarkPaid = async (paymentId: string) => {
+
+  const handleSendBulkPaymentRequests = async () => {
+    const overduePayments = pendingPayments.filter(p => p.status === 'overdue');
+    
+    for (const payment of overduePayments) {
+      if (payment.tenant?.phone) {
+        try {
+          await requestPayment({
+            phoneNumber: payment.tenant.phone,
+            amount: payment.amount,
+            paymentId: payment.id,
+            tenantId: payment.tenant_id || '',
+          });
+        } catch (error) {
+          console.error(`Failed to send payment request to ${payment.tenant.name}:`, error);
+        }
+      }
+    }
+  };
     await updatePayment(paymentId, { 
       status: 'paid', 
       paid_date: new Date().toISOString().split('T')[0] 
@@ -142,6 +180,14 @@ const Payments = () => {
           <p className="text-muted-foreground mt-1">Track rent payments and manage collections</p>
         </div>
         <div className="flex space-x-2">
+          <Button 
+            variant="outline"
+            onClick={handleSendBulkPaymentRequests}
+            disabled={mtnLoading || pendingPayments.filter(p => p.status === 'overdue').length === 0}
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Send All Overdue Requests
+          </Button>
           <Button variant="outline">
             <Filter className="w-4 h-4 mr-2" />
             Filter
