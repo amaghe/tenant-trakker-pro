@@ -2,11 +2,41 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, MapPin, Calendar, DollarSign, Loader2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Mail, Phone, MapPin, Calendar, DollarSign, Loader2, UserPlus, Edit2, Trash2, Users, MessageCircle } from "lucide-react";
 import { useTenants } from "@/hooks/useTenants";
+import TenantFormDialog from "./TenantFormDialog";
+import { useState } from "react";
 
 const Tenants = () => {
-  const { tenants, loading } = useTenants();
+  const { tenants, loading, addTenant, updateTenant, deleteTenant } = useTenants();
+  const [formLoading, setFormLoading] = useState(false);
+
+  const handleAddTenant = async (tenantData: any) => {
+    setFormLoading(true);
+    try {
+      await addTenant(tenantData);
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleUpdateTenant = async (tenantData: any, tenantId: string) => {
+    setFormLoading(true);
+    try {
+      await updateTenant(tenantId, tenantData);
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDeleteTenant = async (tenantId: string) => {
+    try {
+      await deleteTenant(tenantId);
+    } catch (error) {
+      console.error('Error deleting tenant:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -29,6 +59,10 @@ const Tenants = () => {
     }
   };
 
+  const activeTenantsCount = tenants.filter(t => t.status === 'active').length;
+  const overdueTenantsCount = tenants.filter(t => t.status === 'overdue').length;
+  const totalRent = tenants.reduce((sum, t) => sum + t.rent, 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -37,10 +71,71 @@ const Tenants = () => {
           <h1 className="text-3xl font-bold text-foreground">Tenants</h1>
           <p className="text-muted-foreground mt-1">Manage tenant relationships and communications</p>
         </div>
-        <Button className="bg-gradient-primary text-white shadow-elegant hover:shadow-lg transition-all">
-          <DollarSign className="w-4 h-4 mr-2" />
-          Add Tenant
-        </Button>
+        <TenantFormDialog
+          trigger={
+            <Button className="bg-gradient-primary text-white shadow-elegant hover:shadow-lg transition-all">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add Tenant
+            </Button>
+          }
+          onSubmit={handleAddTenant}
+          loading={formLoading}
+        />
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Tenants
+            </CardTitle>
+            <Users className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{tenants.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Active tenants</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Tenants
+            </CardTitle>
+            <Users className="h-4 w-4 text-success" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{activeTenantsCount}</div>
+            <p className="text-xs text-success mt-1">Currently active</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Overdue
+            </CardTitle>
+            <Users className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{overdueTenantsCount}</div>
+            <p className="text-xs text-destructive mt-1">Need attention</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Monthly Rent
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">₦{totalRent.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">Expected monthly</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tenants Grid */}
@@ -97,16 +192,70 @@ const Tenants = () => {
 
               <div className="flex space-x-2 pt-2">
                 <Button variant="outline" size="sm" className="flex-1">
-                  Send Message
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Message
                 </Button>
-                <Button variant="ghost" size="sm" className="flex-1">
-                  View Details
-                </Button>
+                <TenantFormDialog
+                  trigger={
+                    <Button variant="ghost" size="sm">
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                  }
+                  tenant={tenant}
+                  onSubmit={(data) => handleUpdateTenant(data, tenant.id)}
+                  loading={formLoading}
+                />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Tenant</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete {tenant.name}? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => handleDeleteTenant(tenant.id)}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {tenants.length === 0 && (
+        <Card className="bg-gradient-card shadow-card">
+          <CardContent className="p-8 text-center">
+            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">No tenants yet</h3>
+            <p className="text-muted-foreground mb-4">Start by adding your first tenant to manage their information and leases.</p>
+            <TenantFormDialog
+              trigger={
+                <Button>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add Your First Tenant
+                </Button>
+              }
+              onSubmit={handleAddTenant}
+              loading={formLoading}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
