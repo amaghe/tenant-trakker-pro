@@ -56,9 +56,18 @@ serve(async (req) => {
       },
     });
 
+    console.log('Balance API Response Status:', response.status);
+    console.log('Balance API Response Headers:', Object.fromEntries(response.headers.entries()));
+    
     if (!response.ok) {
       const errorText = await response.text();
       console.error('MTN MoMo balance API error:', response.status, errorText);
+      console.error('Full response details:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: errorText
+      });
       throw new Error(`MTN MoMo API error: ${response.status} - ${errorText}`);
     }
 
