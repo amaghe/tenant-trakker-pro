@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Download, Filter, DollarSign, CreditCard, Banknote, Clock, CheckCircle, AlertCircle, Loader2, Wallet, Smartphone, Send, Users } from "lucide-react";
 import { usePayments } from "@/hooks/usePayments";
 import { useMtnMomo } from "@/hooks/useMtnMomo";
+import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 
 const Payments = () => {
@@ -16,6 +17,7 @@ const Payments = () => {
     createInvoice, 
     getInvoiceStatus
   } = useMtnMomo();
+  const { toast } = useToast();
   
   const [walletBalance, setWalletBalance] = useState<any>(null);
   const [balanceError, setBalanceError] = useState<string | null>(null);
@@ -114,8 +116,14 @@ const Payments = () => {
 
   const handleCheckInvoiceStatus = async (paymentId: string) => {
     const payment = payments.find(p => p.id === paymentId);
-    if (!payment || !payment.momo_reference_id) {
-      alert('No MTN reference ID found for this payment');
+    if (!payment) return;
+
+    // If no reference ID exists, show a message
+    if (!payment.momo_reference_id) {
+      toast({
+        title: "Info",
+        description: "No MTN MoMo reference ID found. Please create an invoice first.",
+      });
       return;
     }
     
@@ -130,6 +138,12 @@ const Payments = () => {
         await updatePayment(paymentId, { 
           momo_invoice_status: result.status 
         });
+        
+        toast({
+          title: "Invoice Status Updated",
+          description: `Status: ${result.status}`,
+        });
+        
         console.log('Invoice status:', result);
       }
     } catch (error) {
@@ -440,7 +454,7 @@ const Payments = () => {
                                 <Smartphone className="w-4 h-4 mr-2" />
                                 Create Invoice
                               </Button>
-                              {payment.payment_method === 'MTN Mobile Money' && payment.status === 'pending' && payment.momo_reference_id && (
+                              {payment.status === 'pending' && (
                                 <Button 
                                   size="sm" 
                                   variant="secondary"
