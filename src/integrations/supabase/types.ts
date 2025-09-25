@@ -50,6 +50,8 @@ export type Database = {
           created_at: string
           due_date: string
           id: string
+          momo_invoice_status: string | null
+          momo_reference_id: string | null
           paid_date: string | null
           payment_method: string
           property_id: string | null
@@ -62,6 +64,8 @@ export type Database = {
           created_at?: string
           due_date: string
           id?: string
+          momo_invoice_status?: string | null
+          momo_reference_id?: string | null
           paid_date?: string | null
           payment_method: string
           property_id?: string | null
@@ -74,6 +78,8 @@ export type Database = {
           created_at?: string
           due_date?: string
           id?: string
+          momo_invoice_status?: string | null
+          momo_reference_id?: string | null
           paid_date?: string | null
           payment_method?: string
           property_id?: string | null

@@ -11,6 +11,8 @@ export interface Payment {
   payment_method: string;
   due_date: string;
   paid_date?: string;
+  momo_reference_id?: string;
+  momo_invoice_status?: string;
   tenant?: {
     name: string;
     phone: string;

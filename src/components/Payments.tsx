@@ -79,6 +79,12 @@ const Payments = () => {
     });
 
     if (referenceId) {
+      // Update payment with reference ID
+      await updatePayment(paymentId, { 
+        momo_reference_id: referenceId, 
+        momo_invoice_status: 'PENDING' 
+      });
+      
       setShowMtnPayment(null);
       setPhoneNumber('');
       // Check status after a short delay
@@ -108,15 +114,22 @@ const Payments = () => {
 
   const handleCheckInvoiceStatus = async (paymentId: string) => {
     const payment = payments.find(p => p.id === paymentId);
-    if (!payment) return;
-
-    // For demo purposes, we'll use a mock reference ID
-    // In a real app, you'd store the reference ID when creating the invoice
-    const mockReferenceId = crypto.randomUUID();
+    if (!payment || !payment.momo_reference_id) {
+      alert('No MTN reference ID found for this payment');
+      return;
+    }
     
     try {
-      const result = await getInvoiceStatus({ referenceId: mockReferenceId, paymentId });
+      const result = await getInvoiceStatus({ 
+        referenceId: payment.momo_reference_id, 
+        paymentId 
+      });
+      
       if (result) {
+        // Update payment with new status
+        await updatePayment(paymentId, { 
+          momo_invoice_status: result.status 
+        });
         console.log('Invoice status:', result);
       }
     } catch (error) {
@@ -383,20 +396,25 @@ const Payments = () => {
                         <div className="text-right">
                           <p className="text-xl font-bold text-foreground">₦{payment.amount.toLocaleString()}</p>
                            <div className="flex items-center space-x-2 mt-1">
-                             <Badge 
-                               variant={getStatusColor(payment.status)}
-                               className={payment.status === 'overdue' ? 'bg-destructive/10 text-destructive border-destructive/20' : ''}
-                             >
-                               {payment.status}
-                             </Badge>
-                             <span className="text-xs text-muted-foreground">Due: {new Date(payment.due_date).toLocaleDateString()}</span>
-                             {payment.payment_method === 'MTN Mobile Money' && payment.status === 'pending' && (
-                               <Badge variant="outline" className="bg-info/10 text-info border-info/20">
-                                 <Smartphone className="w-3 h-3 mr-1" />
-                                 SMS Sent
-                               </Badge>
-                             )}
-                           </div>
+                              <Badge 
+                                variant={getStatusColor(payment.status)}
+                                className={payment.status === 'overdue' ? 'bg-destructive/10 text-destructive border-destructive/20' : ''}
+                              >
+                                {payment.status}
+                              </Badge>
+                              {payment.momo_invoice_status && (
+                                <Badge variant="outline" className="bg-info/10 text-info border-info/20">
+                                  MTN: {payment.momo_invoice_status}
+                                </Badge>
+                              )}
+                              <span className="text-xs text-muted-foreground">Due: {new Date(payment.due_date).toLocaleDateString()}</span>
+                              {payment.payment_method === 'MTN Mobile Money' && payment.status === 'pending' && (
+                                <Badge variant="outline" className="bg-info/10 text-info border-info/20">
+                                  <Smartphone className="w-3 h-3 mr-1" />
+                                  SMS Sent
+                                </Badge>
+                              )}
+                            </div>
                            <div className="flex items-center space-x-1 mt-1">
                              {getPaymentMethodIcon(payment.payment_method)}
                              <span className="text-xs text-muted-foreground">{payment.payment_method}</span>
@@ -422,7 +440,7 @@ const Payments = () => {
                                 <Smartphone className="w-4 h-4 mr-2" />
                                 Create Invoice
                               </Button>
-                              {payment.payment_method === 'MTN Mobile Money' && payment.status === 'pending' && (
+                              {payment.payment_method === 'MTN Mobile Money' && payment.status === 'pending' && payment.momo_reference_id && (
                                 <Button 
                                   size="sm" 
                                   variant="secondary"
