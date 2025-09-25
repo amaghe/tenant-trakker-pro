@@ -232,6 +232,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_dashboard_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
