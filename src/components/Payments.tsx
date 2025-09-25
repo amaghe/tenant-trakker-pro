@@ -13,9 +13,8 @@ const Payments = () => {
   const { 
     loading: mtnLoading, 
     getAccountBalance, 
-    requestPayment, 
-    checkTransactionStatus, 
-    manageInvoice 
+    createInvoice, 
+    getInvoiceStatus
   } = useMtnMomo();
   
   const [walletBalance, setWalletBalance] = useState<any>(null);
@@ -73,10 +72,10 @@ const Payments = () => {
       return;
     }
 
-    const referenceId = await requestPayment({
-      phoneNumber,
-      amount,
+    const referenceId = await createInvoice({
       paymentId,
+      amount,
+      msisdn: phoneNumber,
     });
 
     if (referenceId) {
@@ -84,7 +83,7 @@ const Payments = () => {
       setPhoneNumber('');
       // Check status after a short delay
       setTimeout(() => {
-        checkTransactionStatus(referenceId, paymentId);
+        getInvoiceStatus({ referenceId, paymentId });
       }, 5000);
     }
   };
@@ -95,39 +94,19 @@ const Payments = () => {
     for (const payment of overduePayments) {
       if (payment.tenant?.phone) {
         try {
-          await requestPayment({
-            phoneNumber: payment.tenant.phone,
-            amount: payment.amount,
+          await createInvoice({
             paymentId: payment.id,
-            tenantId: payment.tenant_id || '',
+            amount: payment.amount,
+            msisdn: payment.tenant.phone,
           });
         } catch (error) {
-          console.error(`Failed to send payment request to ${payment.tenant.name}:`, error);
+          console.error(`Failed to create invoice for ${payment.tenant.name}:`, error);
         }
       }
     }
   };
 
   const handleMarkPaid = async (paymentId: string) => {
-
-  const handleSendBulkPaymentRequests = async () => {
-    const overduePayments = pendingPayments.filter(p => p.status === 'overdue');
-    
-    for (const payment of overduePayments) {
-      if (payment.tenant?.phone) {
-        try {
-          await requestPayment({
-            phoneNumber: payment.tenant.phone,
-            amount: payment.amount,
-            paymentId: payment.id,
-            tenantId: payment.tenant_id || '',
-          });
-        } catch (error) {
-          console.error(`Failed to send payment request to ${payment.tenant.name}:`, error);
-        }
-      }
-    }
-  };
     await updatePayment(paymentId, { 
       status: 'paid', 
       paid_date: new Date().toISOString().split('T')[0] 
@@ -423,7 +402,7 @@ const Payments = () => {
                                onClick={() => setShowMtnPayment(payment.id)}
                              >
                                <Smartphone className="w-4 h-4 mr-2" />
-                               MTN Payment
+                               Create Invoice
                              </Button>
                            </div>
                            

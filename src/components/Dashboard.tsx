@@ -36,7 +36,7 @@ const Dashboard = () => {
         positive: true,
       },
       {
-        title: "Payment Requests",
+        title: "Invoices Created",
         value: summary.paymentRequests.toString(),
         change: `This month`,
         icon: Smartphone,

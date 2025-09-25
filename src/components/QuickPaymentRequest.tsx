@@ -27,15 +27,14 @@ const QuickPaymentRequest = ({
 }: QuickPaymentRequestProps) => {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(defaultAmount);
-  const { loading, requestPayment } = useMtnMomo();
+  const { loading, createInvoice } = useMtnMomo();
 
   const handleSendRequest = async () => {
     try {
-      const referenceId = await requestPayment({
-        phoneNumber,
+      const referenceId = await createInvoice({
+        paymentId: paymentId || '',
         amount,
-        paymentId,
-        tenantId,
+        msisdn: phoneNumber,
       });
 
       if (referenceId) {
@@ -43,7 +42,7 @@ const QuickPaymentRequest = ({
         onSuccess?.();
       }
     } catch (error) {
-      console.error('Error sending payment request:', error);
+      console.error('Error creating invoice:', error);
     }
   };
 
@@ -56,7 +55,7 @@ const QuickPaymentRequest = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Smartphone className="w-5 h-5 text-success" />
-            Send Payment Request to {tenantName}
+            Create Invoice for {tenantName}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
@@ -73,7 +72,7 @@ const QuickPaymentRequest = ({
               placeholder={`Default: ₦${defaultAmount.toLocaleString()}`}
             />
             <p className="text-xs text-muted-foreground">
-              Payment request will be sent to tenant's phone via MTN MoMo.
+              Invoice will be sent to tenant's phone via MTN MoMo.
             </p>
           </div>
           <div className="flex justify-end space-x-2 pt-4">
@@ -87,7 +86,7 @@ const QuickPaymentRequest = ({
             >
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               <Send className="w-4 h-4 mr-2" />
-              Send Request
+              Create Invoice
             </Button>
           </div>
         </div>

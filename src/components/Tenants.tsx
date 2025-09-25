@@ -18,7 +18,7 @@ const Tenants = () => {
   const { toast } = useToast();
   const { tenants, loading, addTenant, updateTenant, deleteTenant } = useTenants();
   const { payments, addPayment, refetch: refetchPayments } = usePayments();
-  const { loading: mtnLoading, requestPayment } = useMtnMomo();
+  const { loading: mtnLoading, createInvoice } = useMtnMomo();
   const [formLoading, setFormLoading] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
@@ -77,18 +77,17 @@ const Tenants = () => {
       }, false); // Don't show toast yet
 
       // Then send the MTN MoMo request with the payment ID
-      const referenceId = await requestPayment({
-        phoneNumber: tenant.phone,
+      const referenceId = await createInvoice({
+        paymentId: paymentRecord?.id || '',
         amount: amount,
-        tenantId: tenant.id,
-        paymentId: paymentRecord?.id,
+        msisdn: tenant.phone,
       });
 
       if (referenceId) {
         // Only show success after complete flow succeeds
         toast({
           title: "Success",
-          description: "Payment request sent successfully",
+          description: "Invoice created successfully",
         });
         
         setPaymentDialogOpen(null);
@@ -97,13 +96,13 @@ const Tenants = () => {
         await refetchPayments();
       }
     } catch (error) {
-      console.error('Error sending payment request:', error);
+      console.error('Error creating invoice:', error);
       
       // Show appropriate error message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Error",
-        description: `Failed to send payment request: ${errorMessage}`,
+        description: `Failed to create invoice: ${errorMessage}`,
         variant: "destructive",
       });
     }
@@ -244,9 +243,9 @@ const Tenants = () => {
                         variant={recentPayment.status === 'paid' ? 'default' : recentPayment.status === 'pending' ? 'secondary' : 'destructive'}
                         className="text-xs"
                       >
-                        {recentPayment.status === 'pending' ? 'Payment Requested' : 
+                        {recentPayment.status === 'pending' ? 'Invoice Created' : 
                          recentPayment.status === 'paid' ? 'Recently Paid' : 
-                         'Payment Overdue'}
+                         'Invoice Overdue'}
                       </Badge>
                     )}
                   </div>
@@ -285,14 +284,14 @@ const Tenants = () => {
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="flex-1 bg-success/10 hover:bg-success/20 text-success border-success/20">
                       <Smartphone className="w-4 h-4 mr-2" />
-                      Request Payment
+                      Create Invoice
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <Smartphone className="w-5 h-5 text-success" />
-                        Send Payment Request to {tenant.name}
+                        Create Invoice for {tenant.name}
                       </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -323,7 +322,7 @@ const Tenants = () => {
                         >
                           {mtnLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                           <Send className="w-4 h-4 mr-2" />
-                          Send Request
+                          Create Invoice
                         </Button>
                       </div>
                     </div>

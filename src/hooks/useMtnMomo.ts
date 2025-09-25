@@ -15,6 +15,14 @@ interface PaymentRequest {
   externalId?: string;
 }
 
+interface CreateInvoiceRequest {
+  paymentId: string;
+  amount: number;
+  msisdn: string;
+  validitySeconds?: number;
+  description?: string;
+}
+
 interface InvoiceRequest {
   action: 'create' | 'status' | 'cancel';
   invoiceId?: string;
@@ -179,9 +187,24 @@ export const useMtnMomo = () => {
     }
   };
 
+  const createInvoice = async (request: CreateInvoiceRequest): Promise<string | null> => {
+    return await requestPayment({
+      phoneNumber: request.msisdn,
+      amount: request.amount,
+      paymentId: request.paymentId,
+    });
+  };
+
+  const getInvoiceStatus = async (request: { referenceId: string; paymentId?: string }) => {
+    return await checkTransactionStatus(request.referenceId, request.paymentId);
+  };
+
   return {
     loading,
     getAccountBalance,
+    createInvoice,
+    getInvoiceStatus,
+    // Keep old names for backward compatibility
     requestPayment,
     checkTransactionStatus,
     manageInvoice,
