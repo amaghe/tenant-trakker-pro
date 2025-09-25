@@ -71,3 +71,17 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Callbacks
+
+### MTN MoMo Webhook
+
+The MTN MoMo integration supports payment status callbacks via webhook:
+
+**Callback URL**: `https://txmafyswuzslwlixszmf.supabase.co/functions/v1/mtn-momo-callback`
+
+**Security**: Include the `X-Webhook-Secret` header with your configured webhook secret if the `MOMO_WEBHOOK_SECRET` environment variable is set.
+
+**Payload**: The callback expects a JSON payload with `externalId`, `status`, and optionally `financialTransactionId` fields.
+
+When a payment status changes to SUCCESSFUL/SUCCESS/paid, the corresponding payment record is automatically marked as paid. Failed statuses (FAILED/REJECTED/DECLINED) mark the payment as failed.
