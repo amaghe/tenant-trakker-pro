@@ -2,62 +2,55 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, Users, DollarSign, TrendingUp, Calendar, AlertCircle, Loader2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useProperties } from "@/hooks/useProperties";
-import { useTenants } from "@/hooks/useTenants";
 import { usePayments } from "@/hooks/usePayments";
+import { useDashboardSummary } from "@/hooks/useDashboardSummary";
 import { useMemo } from "react";
 
 const Dashboard = () => {
-  const { properties, loading: propertiesLoading } = useProperties();
-  const { tenants, loading: tenantsLoading } = useTenants();
   const { payments, loading: paymentsLoading } = usePayments();
+  const { data: summary, isLoading: summaryLoading } = useDashboardSummary();
 
   const stats = useMemo(() => {
-    const totalProperties = properties.length;
-    const activeTenants = tenants.filter(t => t.status === 'active').length;
-    const monthlyRevenue = tenants.reduce((sum, tenant) => sum + tenant.rent, 0);
-    const paidPayments = payments.filter(p => p.status === 'paid').length;
-    const mtnPaymentRequests = payments.filter(p => p.payment_method === 'MTN Mobile Money' && p.status === 'pending').length;
-    const collectionRate = payments.length > 0 ? (paidPayments / payments.length) * 100 : 0;
+    if (!summary) return [];
 
     return [
       {
         title: "Total Properties",
-        value: totalProperties.toString(),
-        change: `${properties.filter(p => p.status === 'available').length} available`,
+        value: summary.totalProperties.toString(),
+        change: `Properties managed`,
         icon: Building,
         positive: true,
       },
       {
         title: "Active Tenants", 
-        value: activeTenants.toString(),
-        change: `${tenants.filter(t => t.status === 'overdue').length} overdue`,
+        value: summary.activeTenants.toString(),
+        change: `Tenants active`,
         icon: Users,
-        positive: tenants.filter(t => t.status === 'overdue').length === 0,
+        positive: true,
       },
       {
         title: "Monthly Revenue",
-        value: `₦${monthlyRevenue.toLocaleString()}`,
-        change: `${tenants.length} tenants`,
+        value: `₦${summary.monthlyRevenue.toLocaleString()}`,
+        change: `This month`,
         icon: DollarSign,
         positive: true,
       },
       {
         title: "Payment Requests",
-        value: mtnPaymentRequests.toString(),
-        change: `MTN MoMo sent`,
+        value: summary.paymentRequests.toString(),
+        change: `This month`,
         icon: Smartphone,
         positive: true,
       },
       {
         title: "Collection Rate",
-        value: `${collectionRate.toFixed(1)}%`,
-        change: `${paidPayments}/${payments.length} paid`,
+        value: `${summary.collectionRatePercent}%`,
+        change: `Success rate`,
         icon: TrendingUp,
-        positive: collectionRate >= 90,
+        positive: summary.collectionRatePercent >= 90,
       },
     ];
-  }, [properties, tenants, payments]);
+  }, [summary]);
 
   const recentPayments = useMemo(() => 
     payments
@@ -85,7 +78,7 @@ const Dashboard = () => {
     [payments]
   );
 
-  if (propertiesLoading || tenantsLoading || paymentsLoading) {
+  if (summaryLoading || paymentsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
