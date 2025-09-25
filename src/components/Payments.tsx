@@ -106,6 +106,24 @@ const Payments = () => {
     }
   };
 
+  const handleCheckInvoiceStatus = async (paymentId: string) => {
+    const payment = payments.find(p => p.id === paymentId);
+    if (!payment) return;
+
+    // For demo purposes, we'll use a mock reference ID
+    // In a real app, you'd store the reference ID when creating the invoice
+    const mockReferenceId = crypto.randomUUID();
+    
+    try {
+      const result = await getInvoiceStatus({ referenceId: mockReferenceId, paymentId });
+      if (result) {
+        console.log('Invoice status:', result);
+      }
+    } catch (error) {
+      console.error('Failed to check invoice status:', error);
+    }
+  };
+
   const handleMarkPaid = async (paymentId: string) => {
     await updatePayment(paymentId, { 
       status: 'paid', 
@@ -388,23 +406,33 @@ const Payments = () => {
                                </span>
                              )}
                            </div>
-                           <div className="flex space-x-2 mt-3">
-                             <Button 
-                               size="sm" 
-                               className="bg-success hover:bg-success/90 text-white"
-                               onClick={() => handleMarkPaid(payment.id)}
-                             >
-                               Mark Paid
-                             </Button>
-                             <Button 
-                               size="sm" 
-                               variant="outline"
-                               onClick={() => setShowMtnPayment(payment.id)}
-                             >
-                               <Smartphone className="w-4 h-4 mr-2" />
-                               Create Invoice
-                             </Button>
-                           </div>
+                            <div className="flex space-x-2 mt-3">
+                              <Button 
+                                size="sm" 
+                                className="bg-success hover:bg-success/90 text-white"
+                                onClick={() => handleMarkPaid(payment.id)}
+                              >
+                                Mark Paid
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => setShowMtnPayment(payment.id)}
+                              >
+                                <Smartphone className="w-4 h-4 mr-2" />
+                                Create Invoice
+                              </Button>
+                              {payment.payment_method === 'MTN Mobile Money' && payment.status === 'pending' && (
+                                <Button 
+                                  size="sm" 
+                                  variant="secondary"
+                                  onClick={() => handleCheckInvoiceStatus(payment.id)}
+                                  disabled={mtnLoading}
+                                >
+                                  {mtnLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : 'Check Invoice Status'}
+                                </Button>
+                              )}
+                            </div>
                            
                            {/* MTN Payment Modal */}
                            {showMtnPayment === payment.id && (

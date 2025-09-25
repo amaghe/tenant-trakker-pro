@@ -63,11 +63,11 @@ export class MtnMomoService {
   }
 
   /**
-   * Create a payment request
-   * @param request Payment request parameters
+   * Create an invoice
+   * @param request Invoice creation parameters
    * @returns Promise<string | null> Returns reference ID on success, null on failure
    */
-  public async create_payment(
+  public async create_invoice(
     msisdn: string,
     amount: number,
     currency: string = 'EUR',
@@ -102,7 +102,7 @@ export class MtnMomoService {
         payee_note
       };
 
-      console.log('Creating MTN MoMo payment:', {
+      console.log('Creating MTN MoMo invoice:', {
         msisdn: msisdn.substring(0, 5) + '***',
         amount,
         currency: request.currency
@@ -123,28 +123,28 @@ export class MtnMomoService {
 
       if (error) {
         console.error('Supabase function error:', error);
-        throw new Error(`Payment creation failed: ${error.message}`);
+        throw new Error(`Invoice creation failed: ${error.message}`);
       }
 
       if (!data?.success) {
-        throw new Error(data?.error || 'Payment creation failed');
+        throw new Error(data?.error || 'Invoice creation failed');
       }
 
-      console.log('Payment created successfully:', data.referenceId?.substring(0, 8) + '***');
+      console.log('Invoice created successfully:', data.referenceId?.substring(0, 8) + '***');
       return data.referenceId;
 
     } catch (error) {
-      console.error('Error in create_payment:', error);
+      console.error('Error in create_invoice:', error);
       throw error;
     }
   }
 
   /**
-   * Get payment status by reference ID
-   * @param reference_id The transaction reference ID (UUID)
-   * @returns Promise<PaymentStatus | null> Returns payment status or null on failure
+   * Get invoice status by reference ID
+   * @param reference_id The invoice reference ID (UUID)
+   * @returns Promise<PaymentStatus | null> Returns invoice status or null on failure
    */
-  public async get_payment_status(reference_id: string): Promise<PaymentStatus | null> {
+  public async get_invoice_status(reference_id: string): Promise<PaymentStatus | null> {
     try {
       // Input validation
       if (!reference_id) {
@@ -155,7 +155,7 @@ export class MtnMomoService {
         throw new Error('Invalid reference ID format. Must be a valid UUID.');
       }
 
-      console.log('Checking payment status:', reference_id.substring(0, 8) + '***');
+      console.log('Checking invoice status:', reference_id.substring(0, 8) + '***');
 
       const { data, error } = await supabase.functions.invoke('mtn-momo-transaction-status', {
         body: { referenceId: reference_id }
@@ -185,7 +185,7 @@ export class MtnMomoService {
         checkedAt: transaction.checkedAt || new Date().toISOString()
       };
 
-      console.log('Payment status retrieved:', {
+      console.log('Invoice status retrieved:', {
         status: status.status,
         amount: status.amount,
         currency: status.currency
@@ -194,16 +194,16 @@ export class MtnMomoService {
       return status;
 
     } catch (error) {
-      console.error('Error in get_payment_status:', error);
+      console.error('Error in get_invoice_status:', error);
       throw error;
     }
   }
 
   /**
-   * Convenience method to create payment with all parameters
+   * Convenience method to create invoice with all parameters
    */
-  public async createPaymentFull(request: CreatePaymentRequest): Promise<string | null> {
-    return this.create_payment(
+  public async createInvoiceFull(request: CreatePaymentRequest): Promise<string | null> {
+    return this.create_invoice(
       request.msisdn,
       request.amount,
       request.currency,
@@ -214,25 +214,25 @@ export class MtnMomoService {
   }
 
   /**
-   * Check if a payment is completed (successful)
+   * Check if an invoice is completed (successful)
    */
-  public async isPaymentCompleted(reference_id: string): Promise<boolean> {
+  public async isInvoiceCompleted(reference_id: string): Promise<boolean> {
     try {
-      const status = await this.get_payment_status(reference_id);
+      const status = await this.get_invoice_status(reference_id);
       return status?.status === 'SUCCESSFUL';
     } catch (error) {
-      console.error('Error checking if payment completed:', error);
+      console.error('Error checking if invoice completed:', error);
       return false;
     }
   }
 
   /**
-   * Wait for payment completion with polling
+   * Wait for invoice completion with polling
    * @param reference_id Reference ID to monitor
    * @param timeout_seconds Maximum time to wait (default: 300 seconds)
    * @param poll_interval_seconds How often to check (default: 5 seconds)
    */
-  public async waitForPaymentCompletion(
+  public async waitForInvoiceCompletion(
     reference_id: string,
     timeout_seconds: number = 300,
     poll_interval_seconds: number = 5
@@ -243,7 +243,7 @@ export class MtnMomoService {
 
     while (Date.now() - startTime < timeoutMs) {
       try {
-        const status = await this.get_payment_status(reference_id);
+        const status = await this.get_invoice_status(reference_id);
         
         if (!status) {
           throw new Error('Failed to get payment status');
@@ -257,12 +257,28 @@ export class MtnMomoService {
         await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
         
       } catch (error) {
-        console.error('Error during payment polling:', error);
+        console.error('Error during invoice polling:', error);
         throw error;
       }
     }
 
-    throw new Error(`Payment status check timed out after ${timeout_seconds} seconds`);
+    throw new Error(`Invoice status check timed out after ${timeout_seconds} seconds`);
+  }
+
+  // Legacy methods for backward compatibility
+  public async create_payment(
+    msisdn: string,
+    amount: number,
+    currency: string = 'EUR',
+    external_id?: string,
+    payer_msg?: string,
+    payee_note?: string
+  ): Promise<string | null> {
+    return this.create_invoice(msisdn, amount, currency, external_id, payer_msg, payee_note);
+  }
+
+  public async get_payment_status(reference_id: string): Promise<PaymentStatus | null> {
+    return this.get_invoice_status(reference_id);
   }
 }
 

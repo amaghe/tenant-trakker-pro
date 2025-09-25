@@ -42,7 +42,7 @@ serve(async (req) => {
   }
 
   try {
-    await logDebug('info', 'Starting MTN MoMo transaction status check');
+    await logDebug('info', 'Starting MTN MoMo invoice status check');
     
     const { referenceId, paymentId } = await req.json();
 
@@ -58,7 +58,7 @@ serve(async (req) => {
       throw new Error('Invalid reference ID format. Must be a valid UUID.');
     }
 
-    await logDebug('info', 'Transaction status check request received', {
+    await logDebug('info', 'Invoice status check request received', {
       referenceId: referenceId.substring(0, 8) + '***', // Partial log for security
       hasPaymentId: !!paymentId
     });
@@ -86,7 +86,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    await logDebug('info', 'Checking MTN MoMo transaction status', { referenceId: referenceId.substring(0, 8) + '***' });
+    await logDebug('info', 'Checking MTN MoMo invoice status', { referenceId: referenceId.substring(0, 8) + '***' });
 
     // First, get bearer token for authentication
     await logDebug('info', 'Requesting bearer token from MTN MoMo API');
@@ -120,8 +120,8 @@ serve(async (req) => {
     const accessToken = tokenData.access_token;
     await logDebug('info', 'Bearer token obtained successfully for status check');
 
-    // Check transaction status from MTN MoMo Collections API
-    await logDebug('info', 'Requesting transaction status from MTN MoMo API', {
+    // Check invoice status from MTN MoMo Collections API
+    await logDebug('info', 'Requesting invoice status from MTN MoMo API', {
       referenceId: referenceId.substring(0, 8) + '***'
     });
 
@@ -164,7 +164,7 @@ serve(async (req) => {
     }
 
     const transactionData = await response.json();
-    await logDebug('info', 'Transaction status retrieved successfully', {
+    await logDebug('info', 'Invoice status retrieved successfully', {
       status: transactionData.status,
       amount: transactionData.amount,
       currency: transactionData.currency,
@@ -229,7 +229,7 @@ serve(async (req) => {
       }
     }
 
-    await logDebug('info', 'Transaction status check completed successfully');
+    await logDebug('info', 'Invoice status check completed successfully');
 
     return new Response(JSON.stringify({
       success: true,

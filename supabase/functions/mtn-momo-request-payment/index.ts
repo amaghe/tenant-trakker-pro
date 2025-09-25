@@ -36,7 +36,7 @@ serve(async (req) => {
   }
 
   try {
-    await logDebug('info', 'Starting MTN MoMo payment request');
+    await logDebug('info', 'Starting MTN MoMo invoice creation');
     const { phoneNumber, amount, tenantId, paymentId, externalId } = await req.json();
 
     // Clean and validate phone number format for MTN MoMo
@@ -52,7 +52,7 @@ serve(async (req) => {
       cleanPhoneNumber = '+46114477000'; // Default to valid test number
     }
 
-    await logDebug('info', 'Payment request details received', {
+    await logDebug('info', 'Invoice creation details received', {
       phoneNumber: phoneNumber?.substring(0, 5) + '***', // Hide full phone number in logs
       cleanPhoneNumber: cleanPhoneNumber?.substring(0, 5) + '***',
       amount,
@@ -120,11 +120,11 @@ serve(async (req) => {
         partyIdType: "MSISDN",
         partyId: cleanPhoneNumber.replace('+', '') // Remove + for MTN API
       },
-      payerMessage: "Rent payment request",
-      payeeNote: "Property rent collection"
+      payerMessage: "Rent invoice payment",
+      payeeNote: "Property rent invoice"
     };
 
-    await logDebug('info', 'Sending payment request to MTN MoMo API', {
+    await logDebug('info', 'Sending invoice creation to MTN MoMo API', {
       amount,
       currency: "EUR",
       referenceId
@@ -153,7 +153,7 @@ serve(async (req) => {
       throw new Error(`MTN MoMo API error: ${response.status} - ${errorText}`);
     }
 
-    await logDebug('info', 'Payment request initiated successfully', { referenceId });
+    await logDebug('info', 'Invoice created successfully', { referenceId });
 
     // Update payment record with MTN transaction reference
     if (paymentId) {
@@ -176,12 +176,12 @@ serve(async (req) => {
       }
     }
 
-    await logDebug('info', 'Payment request completed successfully', { referenceId });
+    await logDebug('info', 'Invoice creation completed successfully', { referenceId });
 
     return new Response(JSON.stringify({
       success: true,
       referenceId,
-      message: 'Payment request sent successfully to ' + phoneNumber?.substring(0, 5) + '***'
+      message: 'Invoice created successfully for ' + phoneNumber?.substring(0, 5) + '***'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -190,7 +190,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
     
-    await logDebug('error', 'Error in mtn-momo-request-payment function', {
+    await logDebug('error', 'Error in mtn-momo-invoice-creation function', {
       error: errorMessage,
       stack: errorStack
     });
