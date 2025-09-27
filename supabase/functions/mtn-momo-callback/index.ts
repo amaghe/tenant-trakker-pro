@@ -14,25 +14,38 @@ serve(async (req) => {
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const MOMO_WEBHOOK_SECRET = Deno.env.get('MOMO_WEBHOOK_SECRET');
-
-    // Check webhook secret if configured
-    if (MOMO_WEBHOOK_SECRET) {
-      const providedSecret = req.headers.get('X-Webhook-Secret');
-      if (providedSecret !== MOMO_WEBHOOK_SECRET) {
-        console.error('Invalid webhook secret provided');
-        return new Response(JSON.stringify({ 
-          error: 'Unauthorized' 
-        }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+    // Get Supabase credentials from environment
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    // Get webhook secret for validation
+    const webhookSecret = Deno.env.get('MOMO_WEBHOOK_SECRET');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    // Validate webhook secret is mandatory for security
+    if (!webhookSecret) {
+      return new Response(JSON.stringify({ error: 'Webhook secret not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate webhook secret from request headers
+    const providedSecret = req.headers.get('X-Webhook-Secret');
+    if (!providedSecret || providedSecret !== webhookSecret) {
+      return new Response(JSON.stringify({ error: 'Unauthorized webhook request' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse the callback data from MTN MoMo
     const callbackData = await req.json();
@@ -184,19 +197,21 @@ serve(async (req) => {
     
     // Try to log the error
     try {
-      const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-      
-      await supabase.from('debug_logs').insert({
-        function_name: 'mtn-momo-callback',
-        level: 'error',
-        message: 'Unhandled error in callback function',
-        metadata: {
-          error: errorMessage,
-          stack: error instanceof Error ? error.stack : undefined
-        }
-      });
+      const errorLogUrl = Deno.env.get('SUPABASE_URL');
+      const errorLogKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (errorLogUrl && errorLogKey) {
+        const errorSupabase = createClient(errorLogUrl, errorLogKey);
+        
+        await errorSupabase.from('debug_logs').insert({
+          function_name: 'mtn-momo-callback',
+          level: 'error',
+          message: 'Unhandled error in callback function',
+          metadata: {
+            error: errorMessage,
+            stack: error instanceof Error ? error.stack : undefined
+          }
+        });
+      }
     } catch (logError) {
       console.error('Failed to log error:', logError);
     }

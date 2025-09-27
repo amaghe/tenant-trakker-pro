@@ -36,7 +36,62 @@ serve(async (req) => {
   }
 
   try {
-    await logDebug('info', 'Starting MTN MoMo balance check request');
+    // Verify user authentication and admin role
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Authentication required' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Initialize Supabase client to verify user role
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get user from JWT
+    const jwt = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+    
+    if (authError || !user) {
+      await logDebug('error', 'Invalid authentication token', { error: authError });
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid authentication' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if user has admin role
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== 'admin') {
+      await logDebug('error', 'Insufficient permissions', { 
+        userId: user.id, 
+        role: profile?.role,
+        error: profileError 
+      });
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Admin access required' 
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    await logDebug('info', 'Starting MTN MoMo balance check request', { userId: user.id });
     
     const MTN_PRIMARY_KEY = Deno.env.get('MTN_PRIMARY_KEY');
     const MTN_USER_REFERENCE_ID = Deno.env.get('MTN_USER_REFERENCE_ID');

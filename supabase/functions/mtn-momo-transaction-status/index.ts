@@ -42,7 +42,62 @@ serve(async (req) => {
   }
 
   try {
-    await logDebug('info', 'Starting MTN MoMo invoice status check');
+    // Verify user authentication and admin role
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Authentication required' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Initialize Supabase client to verify user role
+    const authSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get user from JWT
+    const jwt = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser(jwt);
+    
+    if (authError || !user) {
+      await logDebug('error', 'Invalid authentication token', { error: authError });
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid authentication' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if user has admin role
+    const { data: profile, error: profileError } = await authSupabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== 'admin') {
+      await logDebug('error', 'Insufficient permissions', { 
+        userId: user.id, 
+        role: profile?.role,
+        error: profileError 
+      });
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Admin access required' 
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    await logDebug('info', 'Starting MTN MoMo invoice status check', { userId: user.id });
     
     const { referenceId, paymentId } = await req.json();
 
@@ -84,7 +139,10 @@ serve(async (req) => {
       throw new Error('Missing Supabase credentials');
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const statusSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     await logDebug('info', 'Checking MTN MoMo invoice status', { referenceId: referenceId.substring(0, 8) + '***' });
 
@@ -208,7 +266,7 @@ serve(async (req) => {
         updateData.paid_date = paidDate;
       }
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await authSupabase
         .from('payments')
         .update(updateData)
         .eq('id', paymentId);
