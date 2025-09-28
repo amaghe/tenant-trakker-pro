@@ -4,16 +4,19 @@ project_id = "txmafyswuzslwlixszmf"
 verify_jwt = true
 
 [functions.mtn-momo-callback]
-verify_jwt = false
+verify_jwt = true
 
 [functions.mtn-momo-invoice]
 verify_jwt = true
 
-[functions.mtn-momo-request-payment]
+[functions.mtn-momo-create-invoice]
 verify_jwt = true
 
-[functions.mtn-momo-transaction-status]
+[functions.mtn-momo-invoice-status]
+verify_jwt = true
+
+[functions.mtn-momo-cancel-invoice]
 verify_jwt = true
 
 [functions.debug-logger]
-verify_jwt = false
+verify_jwt = true
