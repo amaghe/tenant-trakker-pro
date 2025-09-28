@@ -230,6 +230,8 @@ serve(async (req) => {
         .update({ 
           status: 'pending',
           payment_method: 'MTN Mobile Money',
+          momo_reference_id: referenceId,
+          momo_invoice_status: 'CREATED',
           updated_at: new Date().toISOString()
         })
         .eq('id', paymentId);
