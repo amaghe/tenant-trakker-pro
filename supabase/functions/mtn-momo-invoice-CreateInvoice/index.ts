@@ -149,7 +149,16 @@ serve(async (req) => {
     await logDebug('info', 'Generated reference ID for invoice', { referenceId });
 
     // Get access token
-    await logDebug('info', 'Requesting bearer token from MTN MoMo API');
+    await logDebug('info', 'Requesting bearer token from MTN MoMo API', {
+      url: 'https://sandbox.momodeveloper.mtn.com/collection/token/',
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ***',
+        'Ocp-Apim-Subscription-Key': MTN_PRIMARY_KEY ? 'configured' : 'missing',
+        'Content-Type': 'application/json',
+      }
+    }, user.id);
+
     const tokenResponse = await fetch('https://sandbox.momodeveloper.mtn.com/collection/token/', {
       method: 'POST',
       headers: {
@@ -159,15 +168,25 @@ serve(async (req) => {
       },
     });
 
+    await logDebug('info', 'Token response received', {
+      status: tokenResponse.status,
+      statusText: tokenResponse.statusText,
+      ok: tokenResponse.ok,
+      headers: Object.fromEntries(tokenResponse.headers.entries()),
+    }, user.id);
+
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       await logDebug('error', 'Failed to obtain bearer token', { 
-        status: tokenResponse.status, 
-        error: errorText 
-      });
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        error: errorText,
+        headers: Object.fromEntries(tokenResponse.headers.entries())
+      }, user.id);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Failed to obtain access token' 
+        error: 'Failed to obtain access token',
+        details: errorText
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -175,8 +194,17 @@ serve(async (req) => {
     }
 
     const tokenData = await tokenResponse.json();
+    await logDebug('info', 'Token response data', {
+      has_access_token: !!tokenData.access_token,
+      token_type: tokenData.token_type,
+      expires_in: tokenData.expires_in,
+      scope: tokenData.scope
+    }, user.id);
+    
     const accessToken = tokenData.access_token;
-    await logDebug('info', 'Bearer token obtained successfully');
+    await logDebug('info', 'Bearer token obtained successfully', { 
+      accessToken: accessToken ? 'received' : 'missing' 
+    }, user.id);
 
     // Create invoice using v2.0 API
     const invoicePayload = {
@@ -196,9 +224,20 @@ serve(async (req) => {
     };
 
     await logDebug('info', 'Sending invoice creation to MTN MoMo v2.0 API', {
-      ...invoicePayload,
-      intendedPayer: { ...invoicePayload.intendedPayer, partyId: invoicePayload.intendedPayer.partyId.substring(0, 5) + '***' }
-    });
+      url: 'https://sandbox.momodeveloper.mtn.com/collection/v2_0/invoice',
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ***',
+        'X-Reference-Id': referenceId,
+        'X-Target-Environment': 'sandbox',
+        'Ocp-Apim-Subscription-Key': MTN_PRIMARY_KEY ? 'configured' : 'missing',
+        'Content-Type': 'application/json',
+      },
+      payload: {
+        ...invoicePayload,
+        intendedPayer: { ...invoicePayload.intendedPayer, partyId: invoicePayload.intendedPayer.partyId.substring(0, 5) + '***' }
+      }
+    }, user.id);
 
     const invoiceResponse = await fetch('https://sandbox.momodeveloper.mtn.com/collection/v2_0/invoice', {
       method: 'POST',
@@ -212,22 +251,54 @@ serve(async (req) => {
       body: JSON.stringify(invoicePayload),
     });
 
+    await logDebug('info', 'Invoice response received', {
+      status: invoiceResponse.status,
+      statusText: invoiceResponse.statusText,
+      ok: invoiceResponse.ok,
+      headers: Object.fromEntries(invoiceResponse.headers.entries()),
+    }, user.id);
+
     if (!invoiceResponse.ok) {
       const errorText = await invoiceResponse.text();
       await logDebug('error', 'Failed to create invoice', { 
-        status: invoiceResponse.status, 
-        error: errorText 
-      });
+        status: invoiceResponse.status,
+        statusText: invoiceResponse.statusText,
+        error: errorText,
+        headers: Object.fromEntries(invoiceResponse.headers.entries()),
+        payload: {
+          ...invoicePayload,
+          intendedPayer: { ...invoicePayload.intendedPayer, partyId: invoicePayload.intendedPayer.partyId.substring(0, 5) + '***' }
+        }
+      }, user.id);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Failed to create invoice' 
+        error: 'Failed to create invoice',
+        details: errorText
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    await logDebug('info', 'Invoice created successfully', { referenceId });
+    // Try to parse response body
+    let responseData = null;
+    try {
+      const responseText = await invoiceResponse.text();
+      if (responseText) {
+        responseData = JSON.parse(responseText);
+        await logDebug('info', 'Invoice response data', responseData, user.id);
+      } else {
+        await logDebug('info', 'Invoice response empty body', {}, user.id);
+      }
+    } catch (parseError) {
+      await logDebug('warn', 'Could not parse invoice response body', { parseError }, user.id);
+    }
+
+    await logDebug('info', 'Invoice created successfully', { 
+      referenceId,
+      externalId: invoicePayload.externalId,
+      responseData 
+    }, user.id);
 
     // Update payment record if paymentId provided
     if (paymentId) {
