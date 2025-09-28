@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Search, CheckCircle, XCircle, Clock, Users, Smartphone, Plus, RefreshCw } from 'lucide-react';
+import { Loader2, Search, CheckCircle, XCircle, Clock, Users, Smartphone, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useTenants } from '@/hooks/useTenants';
 import { usePayments } from '@/hooks/usePayments';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,7 @@ import { createInvoice, getInvoiceStatus, cancelInvoice } from '@/services/momo'
 
 const Invoices = () => {
   const { tenants } = useTenants();
-  const { payments, loading, addPayment, refetch: refetchPayments } = usePayments();
+  const { payments, loading, addPayment, deletePayment, refetch: refetchPayments } = usePayments();
   const { toast } = useToast();
   
   // Form state
@@ -30,6 +30,7 @@ const Invoices = () => {
   const [checkingAll, setCheckingAll] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   // Filter invoices (payments with momo_reference_id)
   const invoices = useMemo(() => {
@@ -214,6 +215,27 @@ const Invoices = () => {
       case 'FAILED':
       case 'CANCELLED': return 'destructive';
       default: return 'secondary';
+    }
+  };
+
+  // Delete invoice
+  const handleDeleteInvoice = async (paymentId: string) => {
+    setDeleting(paymentId);
+    try {
+      await deletePayment(paymentId);
+      toast({
+        title: "Invoice Deleted",
+        description: "The invoice has been deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete invoice",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -431,6 +453,21 @@ const Invoices = () => {
                             <XCircle className="w-3 h-3" />
                           )}
                         </Button>
+                        {(payment.status === 'pending' || payment.momo_invoice_status === 'CREATED') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteInvoice(payment.id)}
+                            disabled={deleting === payment.id}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            {deleting === payment.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3 h-3" />
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
