@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Building, Users, CreditCard, BarChart3, Settings, Bell, LogOut } from "lucide-react";
+import { Building, Users, CreditCard, BarChart3, Settings, Bell, LogOut, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -19,6 +19,7 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
     { name: "Properties", id: "properties", icon: Building },
     { name: "Tenants", id: "tenants", icon: Users },
     { name: "Payments", id: "payments", icon: CreditCard },
+    { name: "Invoices", id: "invoices", icon: Receipt },
     { name: "Settings", id: "settings", icon: Settings },
   ];
 

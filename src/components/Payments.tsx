@@ -210,7 +210,7 @@ const Payments = () => {
             disabled={mtnLoading || pendingPayments.filter(p => p.status === 'overdue').length === 0}
           >
             <Send className="w-4 h-4 mr-2" />
-            Send All Overdue Requests
+            Send All Overdue Invoices
           </Button>
           <Button variant="outline">
             <Filter className="w-4 h-4 mr-2" />

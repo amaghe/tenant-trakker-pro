@@ -5,6 +5,7 @@ import Dashboard from "@/components/Dashboard";
 import Properties from "@/components/Properties";
 import Tenants from "@/components/Tenants";
 import Payments from "@/components/Payments";
+import Invoices from "@/pages/Invoices";
 import { useAuth } from "@/hooks/useAuth";
 import { usePaymentNotifications } from "@/hooks/usePaymentNotifications";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,8 @@ const Index = () => {
         return <Tenants />;
       case "payments":
         return <Payments />;
+      case "invoices":
+        return <Invoices />;
       default:
         return <Dashboard />;
     }

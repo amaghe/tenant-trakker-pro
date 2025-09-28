@@ -135,9 +135,9 @@ export default function MtnMomoDemo() {
         {/* Create Payment */}
         <Card>
           <CardHeader>
-            <CardTitle>Create Payment</CardTitle>
+            <CardTitle>Create Invoice</CardTitle>
             <CardDescription>
-              Send a payment request to MTN Mobile Money
+              Send an invoice request to MTN Mobile Money
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -195,12 +195,12 @@ export default function MtnMomoDemo() {
               disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Payment
+              Create Invoice
             </Button>
 
             {referenceId && (
               <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                <div className="text-sm font-medium text-green-800">Payment Created</div>
+                <div className="text-sm font-medium text-green-800">Invoice Created</div>
                 <div className="text-xs text-green-600 font-mono break-all">
                   Reference ID: {referenceId}
                 </div>
@@ -212,9 +212,9 @@ export default function MtnMomoDemo() {
         {/* Check Status */}
         <Card>
           <CardHeader>
-            <CardTitle>Check Payment Status</CardTitle>
+            <CardTitle>Check Invoice Status</CardTitle>
             <CardDescription>
-              Get the current status of a payment
+              Get the current status of an invoice
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -306,21 +306,21 @@ export default function MtnMomoDemo() {
             <div>
               <h4 className="font-medium mb-2">Available Methods</h4>
               <ul className="text-sm space-y-1 text-gray-600">
-                <li>• <code>create_payment(msisdn, amount, currency, external_id, payer_msg, payee_note)</code></li>
-                <li>• <code>get_payment_status(reference_id)</code></li>
-                <li>• <code>isPaymentCompleted(reference_id)</code></li>
-                <li>• <code>waitForPaymentCompletion(reference_id, timeout, interval)</code></li>
+                <li>• <code>create_invoice(msisdn, amount, currency, external_id, payer_msg, payee_note)</code></li>
+                <li>• <code>get_invoice_status(reference_id)</code></li>
+                <li>• <code>isInvoiceCompleted(reference_id)</code></li>
+                <li>• <code>waitForInvoiceCompletion(reference_id, timeout, interval)</code></li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-medium mb-2">Status Values</h4>
               <ul className="text-sm space-y-1 text-gray-600">
-                <li>• <code>PENDING</code> - Payment request sent</li>
-                <li>• <code>ONGOING</code> - Payment in progress</li>
-                <li>• <code>SUCCESSFUL</code> - Payment completed</li>
-                <li>• <code>FAILED</code> - Payment failed</li>
-                <li>• <code>REJECTED</code> - Payment rejected</li>
+                <li>• <code>PENDING</code> - Invoice request sent</li>
+                <li>• <code>ONGOING</code> - Invoice in progress</li>
+                <li>• <code>SUCCESSFUL</code> - Invoice completed</li>
+                <li>• <code>FAILED</code> - Invoice failed</li>
+                <li>• <code>REJECTED</code> - Invoice rejected</li>
               </ul>
             </div>
           </div>
