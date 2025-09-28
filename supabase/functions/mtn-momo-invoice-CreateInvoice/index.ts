@@ -34,142 +34,114 @@ serve(async (req) => {
   }
 
   try {
-    // Get the authorization header
+    // Verify user authentication and admin role
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      await logDebug('error', 'Missing authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Create Supabase client and get user
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY');
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      await logDebug('error', 'Missing Supabase configuration', {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseAnonKey
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Authentication required' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    // Initialize Supabase client to verify user role
+    const authSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get user from JWT
+    const jwt = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser(jwt);
+    
     if (authError || !user) {
-      await logDebug('error', 'Authentication failed', { authError });
-      return new Response(
-        JSON.stringify({ error: 'Authentication failed' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      await logDebug('error', 'Invalid authentication token', { error: authError });
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid authentication' 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    await logDebug('info', 'Starting MTN MoMo CreateInvoice', { userId: user.id });
-
-    // Check user role
-    const { data: profile, error: profileError } = await supabase
+    // Check if user has admin role
+    const { data: profile, error: profileError } = await authSupabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .maybeSingle();
+      .single();
 
-    if (profileError) {
-      await logDebug('error', 'Failed to fetch user profile', { userId: user.id, error: profileError });
-      return new Response(
-        JSON.stringify({ error: 'Failed to verify user permissions' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    if (profileError || !profile || profile.role !== 'admin') {
+      await logDebug('error', 'Insufficient permissions', { 
+        userId: user.id, 
+        role: profile?.role,
+        error: profileError 
+      });
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Admin access required' 
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    if (!profile || profile.role !== 'admin') {
-      await logDebug('error', 'Insufficient permissions', { userId: user.id, role: profile?.role });
-      return new Response(
-        JSON.stringify({ error: 'Insufficient permissions' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    await logDebug('info', 'Starting MTN MoMo invoice creation', { userId: user.id });
 
-    // Parse request body
-    const body = await req.json();
-    const { 
-      paymentId, 
-      amount, 
-      msisdn, 
-      validityDuration = 24, 
-      description = "Invoice",
-      payeeMsisdn 
-    } = body;
-
+    const { paymentId, amount, msisdn, validityDuration = 24, description = "Invoice", payeeMsisdn } = await req.json();
+    
     if (!amount || !msisdn) {
       await logDebug('error', 'Missing required fields', { paymentId, amount: !!amount, msisdn: !!msisdn });
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: amount and msisdn' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Missing required fields: amount and msisdn' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Clean phone number for sandbox environment
-    let cleanPhoneNumber = msisdn.replace(/[^\d+]/g, ''); // Remove all non-digit characters except +
+    let cleanPhoneNumber = msisdn?.replace(/[^\d+]/g, ''); // Remove all non-digit characters except +
     
     // Convert US format to international format for sandbox testing
-    if (cleanPhoneNumber.startsWith('+1') || (cleanPhoneNumber.startsWith('1') && cleanPhoneNumber.length === 11)) {
-      cleanPhoneNumber = '46114699151'; // Valid Swedish test number for sandbox
-    } else if (cleanPhoneNumber.startsWith('+')) {
-      cleanPhoneNumber = cleanPhoneNumber.substring(1); // Remove + prefix
-    } else if (!cleanPhoneNumber) {
-      cleanPhoneNumber = '46114699151'; // Default to valid test number
+    if (cleanPhoneNumber?.startsWith('+1')) {
+      cleanPhoneNumber = '+46114477000'; // Valid Swedish test number for sandbox
+    } else if (cleanPhoneNumber?.startsWith('1') && cleanPhoneNumber.length === 11) {
+      cleanPhoneNumber = '+46114477000'; // Valid Swedish test number for sandbox
+    } else if (!cleanPhoneNumber?.startsWith('+')) {
+      cleanPhoneNumber = '+46114477000'; // Default to valid test number
     }
 
     await logDebug('info', 'Invoice creation details received', {
-      phoneNumber: msisdn.substring(0, 7) + '***',
-      cleanPhoneNumber: cleanPhoneNumber.substring(0, 7) + '***',
+      phoneNumber: msisdn?.substring(0, 5) + '***',
+      cleanPhoneNumber: cleanPhoneNumber?.substring(0, 5) + '***',
       amount,
       paymentId,
       validityDuration,
       description
     });
 
-    // Get MTN MoMo configuration
-    const mtnPrimaryKey = Deno.env.get('MTN_PRIMARY_KEY');
-    const mtnUserApiKey = Deno.env.get('MTN_USER_API_KEY');
-    const mtnUserReferenceId = Deno.env.get('MTN_USER_REFERENCE_ID');
-    const mtnCallbackUrl = Deno.env.get('MTN_CALLBACK_URL');
+    const MTN_PRIMARY_KEY = Deno.env.get('MTN_PRIMARY_KEY');
+    const MTN_USER_REFERENCE_ID = Deno.env.get('MTN_USER_REFERENCE_ID');
+    const MTN_USER_API_KEY = Deno.env.get('MTN_USER_API_KEY');
 
-    if (!mtnPrimaryKey || !mtnUserApiKey || !mtnUserReferenceId) {
-      await logDebug('error', 'Missing MTN MoMo configuration');
-      return new Response(
-        JSON.stringify({ error: 'MTN MoMo configuration not found' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    if (!MTN_PRIMARY_KEY || !MTN_USER_REFERENCE_ID || !MTN_USER_API_KEY) {
+      await logDebug('error', 'Missing MTN MoMo credentials', {
+        hasPrimaryKey: !!MTN_PRIMARY_KEY,
+        hasUserRefId: !!MTN_USER_REFERENCE_ID,
+        hasApiKey: !!MTN_USER_API_KEY
+      });
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'MTN MoMo configuration not found' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Generate reference ID
@@ -181,8 +153,8 @@ serve(async (req) => {
     const tokenResponse = await fetch('https://sandbox.momodeveloper.mtn.com/collection/token/', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${btoa(`${mtnUserReferenceId}:${mtnUserApiKey}`)}`,
-        'Ocp-Apim-Subscription-Key': mtnPrimaryKey,
+        'Authorization': `Basic ${btoa(MTN_USER_REFERENCE_ID + ':' + MTN_USER_API_KEY)}`,
+        'Ocp-Apim-Subscription-Key': MTN_PRIMARY_KEY,
         'Content-Type': 'application/json',
       },
     });
@@ -193,13 +165,13 @@ serve(async (req) => {
         status: tokenResponse.status, 
         error: errorText 
       });
-      return new Response(
-        JSON.stringify({ error: 'Failed to obtain access token' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Failed to obtain access token' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const tokenData = await tokenResponse.json();
@@ -214,35 +186,29 @@ serve(async (req) => {
       validityDuration: (validityDuration * 3600).toString(), // Convert hours to seconds
       intendedPayer: {
         partyIdType: "MSISDN",
-        partyId: cleanPhoneNumber
+        partyId: cleanPhoneNumber.replace('+', '') // Remove + for MTN API
       },
       payee: {
         partyIdType: "MSISDN", 
-        partyId: payeeMsisdn || "+4611234567" // Default payee for sandbox
+        partyId: payeeMsisdn || "4611234567" // Default payee for sandbox
       },
       description
     };
 
     await logDebug('info', 'Sending invoice creation to MTN MoMo v2.0 API', {
       ...invoicePayload,
-      intendedPayer: { ...invoicePayload.intendedPayer, partyId: invoicePayload.intendedPayer.partyId.substring(0, 7) + '***' }
+      intendedPayer: { ...invoicePayload.intendedPayer, partyId: invoicePayload.intendedPayer.partyId.substring(0, 5) + '***' }
     });
-
-    const invoiceHeaders: Record<string, string> = {
-      'Authorization': `Bearer ${accessToken}`,
-      'X-Reference-Id': referenceId,
-      'X-Target-Environment': 'sandbox',
-      'Ocp-Apim-Subscription-Key': mtnPrimaryKey,
-      'Content-Type': 'application/json',
-    };
-
-    if (mtnCallbackUrl) {
-      invoiceHeaders['X-Callback-Url'] = mtnCallbackUrl;
-    }
 
     const invoiceResponse = await fetch('https://sandbox.momodeveloper.mtn.com/collection/v2_0/invoice', {
       method: 'POST',
-      headers: invoiceHeaders,
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'X-Reference-Id': referenceId,
+        'X-Target-Environment': 'sandbox',
+        'Ocp-Apim-Subscription-Key': MTN_PRIMARY_KEY,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(invoicePayload),
     });
 
@@ -252,13 +218,13 @@ serve(async (req) => {
         status: invoiceResponse.status, 
         error: errorText 
       });
-      return new Response(
-        JSON.stringify({ error: 'Failed to create invoice' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Failed to create invoice' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     await logDebug('info', 'Invoice created successfully', { referenceId });
@@ -267,14 +233,13 @@ serve(async (req) => {
     if (paymentId) {
       await logDebug('info', 'Updating payment record', { paymentId, referenceId });
       
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      const serviceSupabase = createClient(supabaseUrl, supabaseServiceKey!);
-      
-      const { error: updateError } = await serviceSupabase
+      const { error: updateError } = await authSupabase
         .from('payments')
         .update({
+          status: 'pending',
+          payment_method: 'MTN Mobile Money',
           momo_reference_id: referenceId,
-          momo_invoice_status: 'PENDING',
+          momo_invoice_status: 'CREATED',
           updated_at: new Date().toISOString()
         })
         .eq('id', paymentId);
@@ -288,28 +253,31 @@ serve(async (req) => {
 
     await logDebug('info', 'Invoice creation completed successfully', { referenceId });
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        referenceId,
-        externalId: invoicePayload.externalId
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    return new Response(JSON.stringify({
+      success: true,
+      referenceId,
+      externalId: invoicePayload.externalId,
+      message: 'Invoice created successfully'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    await logDebug('error', 'Unexpected error in invoice creation', { error: errorMessage });
-    console.error('Error creating invoice:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    await logDebug('error', 'Error in mtn-momo-invoice-CreateInvoice function', {
+      error: errorMessage,
+      stack: errorStack
+    });
+    
+    console.error('Error in mtn-momo-invoice-CreateInvoice function:', error);
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: errorMessage 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
