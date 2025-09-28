@@ -12,6 +12,9 @@ verify_jwt = true
 [functions.mtn-momo-create-invoice]
 verify_jwt = true
 
+[functions.mtn-momo-invoice-CreateInvoice]
+verify_jwt = true
+
 [functions.mtn-momo-invoice-status]
 verify_jwt = true
 
