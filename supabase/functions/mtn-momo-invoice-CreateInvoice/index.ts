@@ -49,10 +49,13 @@ serve(async (req) => {
 
     // Create Supabase client and get user
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY');
     
     if (!supabaseUrl || !supabaseAnonKey) {
-      await logDebug('error', 'Missing Supabase configuration');
+      await logDebug('error', 'Missing Supabase configuration', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseAnonKey
+      });
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
         { 
