@@ -81,11 +81,22 @@ serve(async (req) => {
     await logDebug('info', 'Starting MTN MoMo CreateInvoice', { userId: user.id });
 
     // Check user role
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (profileError) {
+      await logDebug('error', 'Failed to fetch user profile', { userId: user.id, error: profileError });
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify user permissions' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     if (!profile || profile.role !== 'admin') {
       await logDebug('error', 'Insufficient permissions', { userId: user.id, role: profile?.role });
@@ -121,11 +132,15 @@ serve(async (req) => {
     }
 
     // Clean phone number for sandbox environment
-    let cleanPhoneNumber = msisdn.replace(/\D/g, '');
-    if (cleanPhoneNumber.startsWith('1')) {
-      cleanPhoneNumber = '+46114699151'; // Sandbox number
-    } else if (!cleanPhoneNumber.startsWith('+')) {
-      cleanPhoneNumber = '+' + cleanPhoneNumber;
+    let cleanPhoneNumber = msisdn.replace(/[^\d+]/g, ''); // Remove all non-digit characters except +
+    
+    // Convert US format to international format for sandbox testing
+    if (cleanPhoneNumber.startsWith('+1') || (cleanPhoneNumber.startsWith('1') && cleanPhoneNumber.length === 11)) {
+      cleanPhoneNumber = '46114699151'; // Valid Swedish test number for sandbox
+    } else if (cleanPhoneNumber.startsWith('+')) {
+      cleanPhoneNumber = cleanPhoneNumber.substring(1); // Remove + prefix
+    } else if (!cleanPhoneNumber) {
+      cleanPhoneNumber = '46114699151'; // Default to valid test number
     }
 
     await logDebug('info', 'Invoice creation details received', {
