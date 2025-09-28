@@ -418,11 +418,11 @@ const Invoices = () => {
                     <TableCell>
                       {new Date(payment.due_date).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>
-                      <code className="text-xs bg-muted px-2 py-1 rounded">
-                        {payment.momo_reference_id?.slice(-8) || 'N/A'}
-                      </code>
-                    </TableCell>
+                     <TableCell>
+                       <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+                         {payment.momo_reference_id || 'N/A'}
+                       </code>
+                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
                         <Button

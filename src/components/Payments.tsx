@@ -429,15 +429,23 @@ const Payments = () => {
                                 </Badge>
                               )}
                             </div>
-                           <div className="flex items-center space-x-1 mt-1">
-                             {getPaymentMethodIcon(payment.payment_method)}
-                             <span className="text-xs text-muted-foreground">{payment.payment_method}</span>
-                             {payment.created_at && (
-                               <span className="text-xs text-muted-foreground">
-                                 • Created {new Date(payment.created_at).toLocaleDateString()}
-                               </span>
+                             <div className="flex items-center space-x-1 mt-1">
+                              {getPaymentMethodIcon(payment.payment_method)}
+                              <span className="text-xs text-muted-foreground">{payment.payment_method}</span>
+                              {payment.created_at && (
+                                <span className="text-xs text-muted-foreground">
+                                  • Created {new Date(payment.created_at).toLocaleDateString()}
+                                </span>
+                              )}
+                             </div>
+                             {payment.momo_reference_id && (
+                               <div className="mt-2">
+                                 <span className="text-xs text-muted-foreground">Reference: </span>
+                                 <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+                                   {payment.momo_reference_id}
+                                 </code>
+                               </div>
                              )}
-                           </div>
                             <div className="flex space-x-2 mt-3">
                               <Button 
                                 size="sm" 
