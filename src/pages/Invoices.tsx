@@ -22,6 +22,7 @@ const Invoices = () => {
   const [amount, setAmount] = useState<number>(0);
   const [msisdn, setMsisdn] = useState('');
   const [description, setDescription] = useState('Rent invoice');
+  const [validityDuration, setValidityDuration] = useState<number>(24); // Default 24 hours
   const [creating, setCreating] = useState(false);
   
   // UI state
@@ -87,6 +88,7 @@ const Invoices = () => {
         amount,
         msisdn,
         description,
+        validityDuration,
       });
 
       toast({
@@ -99,6 +101,7 @@ const Invoices = () => {
       setAmount(0);
       setMsisdn('');
       setDescription('Rent invoice');
+      setValidityDuration(24);
       
       await refetchPayments();
     } catch (error) {
@@ -264,7 +267,7 @@ const Invoices = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label>Tenant</Label>
               <Select value={selectedTenant} onValueChange={handleTenantSelect}>
@@ -304,6 +307,18 @@ const Invoices = () => {
             </div>
             
             <div className="space-y-2">
+              <Label>Validity (hours)</Label>
+              <Input
+                type="number"
+                value={validityDuration}
+                onChange={(e) => setValidityDuration(Number(e.target.value))}
+                placeholder="24"
+                min="1"
+                max="168"
+              />
+            </div>
+            
+            <div className="space-y-2">
               <Label>Description</Label>
               <Input
                 value={description}
@@ -316,7 +331,7 @@ const Invoices = () => {
           <div className="flex justify-end">
             <Button 
               onClick={handleCreateInvoice}
-              disabled={creating || !selectedTenant || !amount || !msisdn}
+              disabled={creating || !selectedTenant || !amount || !msisdn || !validityDuration}
               className="bg-primary hover:bg-primary/90"
             >
               {creating ? (

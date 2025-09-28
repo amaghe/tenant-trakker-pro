@@ -4,7 +4,7 @@ export type CreateInvoiceArgs = {
   paymentId: string;
   amount: number | string;
   msisdn: string;
-  validitySeconds?: number;
+  validityDuration?: number; // Duration in hours
   description?: string;
   payeeMsisdn?: string;
 };
@@ -13,7 +13,7 @@ export type GetInvoiceStatusArgs = { paymentId?: string; referenceId?: string; }
 export type CancelInvoiceArgs = { paymentId?: string; referenceId?: string; externalId?: string };
 
 export async function createInvoice(args: CreateInvoiceArgs) {
-  const { data, error } = await supabase.functions.invoke('mtn-momo-create-invoice', { body: args });
+  const { data, error } = await supabase.functions.invoke('mtn-momo-request-payment', { body: args });
   if (error) throw error;
   return data as { success: boolean; referenceId: string; externalId: string };
 }

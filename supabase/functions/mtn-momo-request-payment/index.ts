@@ -92,10 +92,13 @@ serve(async (req) => {
     }
 
     await logDebug('info', 'Starting MTN MoMo invoice creation', { userId: user.id });
-    const { phoneNumber, amount, tenantId, paymentId, externalId } = await req.json();
+    const { phoneNumber, amount, tenantId, paymentId, externalId, validityDuration, description, msisdn } = await req.json();
+    
+    // Use msisdn if provided, otherwise use phoneNumber for backwards compatibility
+    const targetPhone = msisdn || phoneNumber;
 
     // Clean and validate phone number format for MTN MoMo
-    let cleanPhoneNumber = phoneNumber?.replace(/[^\d+]/g, ''); // Remove all non-digit characters except +
+    let cleanPhoneNumber = targetPhone?.replace(/[^\d+]/g, ''); // Remove all non-digit characters except +
     
     // Convert US format to international format for sandbox testing
     if (cleanPhoneNumber?.startsWith('+1')) {
@@ -108,12 +111,14 @@ serve(async (req) => {
     }
 
     await logDebug('info', 'Invoice creation details received', {
-      phoneNumber: phoneNumber?.substring(0, 5) + '***', // Hide full phone number in logs
+      phoneNumber: targetPhone?.substring(0, 5) + '***', // Hide full phone number in logs
       cleanPhoneNumber: cleanPhoneNumber?.substring(0, 5) + '***',
       amount,
       tenantId,
       paymentId,
-      hasExternalId: !!externalId
+      hasExternalId: !!externalId,
+      validityDuration,
+      description
     });
 
     const MTN_PRIMARY_KEY = Deno.env.get('MTN_PRIMARY_KEY');
@@ -178,14 +183,17 @@ serve(async (req) => {
         partyIdType: "MSISDN",
         partyId: cleanPhoneNumber.replace('+', '') // Remove + for MTN API
       },
-      payerMessage: "Rent invoice payment",
-      payeeNote: "Property rent invoice"
+      payerMessage: description || "Rent invoice payment",
+      payeeNote: description || "Property rent invoice",
+      ...(validityDuration && { validityDuration: validityDuration * 3600 }) // Convert hours to seconds
     };
 
     await logDebug('info', 'Sending invoice creation to MTN MoMo API', {
       amount,
       currency: "EUR",
-      referenceId
+      referenceId,
+      validityDuration,
+      description
     });
 
     const response = await fetch('https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay', {
@@ -239,7 +247,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       referenceId,
-      message: 'Invoice created successfully for ' + phoneNumber?.substring(0, 5) + '***'
+      externalId: referenceId,
+      message: 'Invoice created successfully for ' + targetPhone?.substring(0, 5) + '***'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
