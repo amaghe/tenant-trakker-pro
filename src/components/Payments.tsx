@@ -14,8 +14,8 @@ const Payments = () => {
   const { 
     loading: mtnLoading, 
     getAccountBalance, 
-    createInvoice, 
-    getInvoiceStatus
+    createRequestToPay, 
+    getRequestToPayTransactionStatus
   } = useMtnMomo();
   const { toast } = useToast();
   
@@ -74,24 +74,24 @@ const Payments = () => {
       return;
     }
 
-    const referenceId = await createInvoice({
-      paymentId,
+    const referenceId = await createRequestToPay({
+      phoneNumber,
       amount,
-      msisdn: phoneNumber,
+      paymentId,
     });
 
     if (referenceId) {
       // Update payment with reference ID
       await updatePayment(paymentId, { 
         momo_reference_id: referenceId, 
-        momo_invoice_status: 'PENDING' 
+        momo_request_status: 'PENDING' 
       });
       
       setShowMtnPayment(null);
       setPhoneNumber('');
       // Check status after a short delay
       setTimeout(() => {
-        getInvoiceStatus({ referenceId, paymentId });
+        getRequestToPayTransactionStatus(referenceId, paymentId);
       }, 5000);
     }
   };
@@ -102,19 +102,19 @@ const Payments = () => {
     for (const payment of overduePayments) {
       if (payment.tenant?.phone) {
         try {
-          await createInvoice({
-            paymentId: payment.id,
+          await createRequestToPay({
+            phoneNumber: payment.tenant.phone,
             amount: payment.amount,
-            msisdn: payment.tenant.phone,
+            paymentId: payment.id,
           });
         } catch (error) {
-          console.error(`Failed to create invoice for ${payment.tenant.name}:`, error);
+          console.error(`Failed to create payment request for ${payment.tenant.name}:`, error);
         }
       }
     }
   };
 
-  const handleCheckInvoiceStatus = async (paymentId: string) => {
+  const handleCheckPaymentStatus = async (paymentId: string) => {
     const payment = payments.find(p => p.id === paymentId);
     if (!payment) return;
 
@@ -122,32 +122,32 @@ const Payments = () => {
     if (!payment.momo_reference_id) {
       toast({
         title: "Info",
-        description: "No MTN MoMo reference ID found. Please create an invoice first.",
+        description: "No MTN MoMo reference ID found. Please create a payment request first.",
       });
       return;
     }
     
     try {
-      const result = await getInvoiceStatus({ 
-        referenceId: payment.momo_reference_id, 
+      const result = await getRequestToPayTransactionStatus(
+        payment.momo_reference_id, 
         paymentId 
-      });
+      );
       
       if (result) {
         // Update payment with new status
         await updatePayment(paymentId, { 
-          momo_invoice_status: result.status 
+          momo_request_status: result.status 
         });
         
         toast({
-          title: "Invoice Status Updated",
+          title: "Payment Status Updated",
           description: `Status: ${result.status}`,
         });
         
-        console.log('Invoice status:', result);
+        console.log('Payment status:', result);
       }
     } catch (error) {
-      console.error('Failed to check invoice status:', error);
+      console.error('Failed to check payment status:', error);
     }
   };
 
@@ -210,7 +210,7 @@ const Payments = () => {
             disabled={mtnLoading || pendingPayments.filter(p => p.status === 'overdue').length === 0}
           >
             <Send className="w-4 h-4 mr-2" />
-            Send All Overdue Invoices
+            Send All Overdue Requests
           </Button>
           <Button variant="outline">
             <Filter className="w-4 h-4 mr-2" />
@@ -416,11 +416,11 @@ const Payments = () => {
                               >
                                 {payment.status}
                               </Badge>
-                              {payment.momo_invoice_status && (
-                                <Badge variant="outline" className="bg-info/10 text-info border-info/20">
-                                  MTN: {payment.momo_invoice_status}
-                                </Badge>
-                              )}
+                               {payment.momo_request_status && (
+                                 <Badge variant="outline" className="bg-info/10 text-info border-info/20">
+                                   MTN: {payment.momo_request_status}
+                                 </Badge>
+                               )}
                               <span className="text-xs text-muted-foreground">Due: {new Date(payment.due_date).toLocaleDateString()}</span>
                               {payment.payment_method === 'MTN Mobile Money' && payment.status === 'pending' && (
                                 <Badge variant="outline" className="bg-info/10 text-info border-info/20">
@@ -460,16 +460,16 @@ const Payments = () => {
                                 onClick={() => setShowMtnPayment(payment.id)}
                               >
                                 <Smartphone className="w-4 h-4 mr-2" />
-                                Create Invoice
+                                Request Payment
                               </Button>
                               {payment.status === 'pending' && (
                                 <Button 
                                   size="sm" 
                                   variant="secondary"
-                                  onClick={() => handleCheckInvoiceStatus(payment.id)}
+                                  onClick={() => handleCheckPaymentStatus(payment.id)}
                                   disabled={mtnLoading}
                                 >
-                                  {mtnLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : 'Check Invoice Status'}
+                                  {mtnLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : 'Check Payment Status'}
                                 </Button>
                               )}
                             </div>

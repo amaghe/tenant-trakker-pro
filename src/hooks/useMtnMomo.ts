@@ -199,12 +199,25 @@ export const useMtnMomo = () => {
     return await checkTransactionStatus(request.referenceId, request.paymentId);
   };
 
+  // RequestToPay specific functions for Payments page
+  const createRequestToPay = async (request: PaymentRequest): Promise<string | null> => {
+    return await requestPayment(request);
+  };
+
+  const getRequestToPayTransactionStatus = async (referenceId: string, paymentId?: string) => {
+    return await checkTransactionStatus(referenceId, paymentId);
+  };
+
   return {
     loading,
     getAccountBalance,
+    // RequestToPay functions for Payments page
+    createRequestToPay,
+    getRequestToPayTransactionStatus,
+    // Invoice functions for Invoices page (backward compatibility)
     createInvoice,
     getInvoiceStatus,
-    // Keep old names for backward compatibility
+    // Original functions
     requestPayment,
     checkTransactionStatus,
     manageInvoice,

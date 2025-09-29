@@ -13,6 +13,7 @@ export interface Payment {
   paid_date?: string;
   momo_reference_id?: string;
   momo_invoice_status?: string;
+  momo_request_status?: string;
   momo_financial_transaction_id?: string;
   momo_error_code?: string;
   momo_error_message?: string;
