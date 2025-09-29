@@ -11,6 +11,7 @@ import { useTenants } from '@/hooks/useTenants';
 import { usePayments } from '@/hooks/usePayments';
 import { useToast } from '@/hooks/use-toast';
 import { createInvoice, getInvoiceStatus, cancelInvoice } from '@/services/momo';
+import { getPaymentStatusDisplay } from '@/lib/statusUtils';
 
 const Invoices = () => {
   const { tenants } = useTenants();
@@ -206,6 +207,7 @@ const Invoices = () => {
       case 'pending': return 'secondary';
       case 'overdue': return 'destructive';
       case 'failed': return 'destructive';
+      case 'expired': return 'outline';
       default: return 'secondary';
     }
   };
@@ -410,24 +412,27 @@ const Invoices = () => {
                       ₦{payment.amount.toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <Badge variant={getStatusBadgeVariant(payment.status)}>
-                          {payment.status}
-                        </Badge>
-                        {/* Show error details for failed payments */}
-                        {payment.status === 'failed' && (payment.momo_error_code || payment.momo_error_message) && (
-                          <div className="text-xs text-destructive">
-                            {payment.momo_error_code && `Code: ${payment.momo_error_code}`}
-                            {payment.momo_error_message && ` - ${payment.momo_error_message}`}
+                      {(() => {
+                        const statusDisplay = getPaymentStatusDisplay(payment);
+                        return (
+                          <div className="space-y-1">
+                            <Badge variant={statusDisplay.badgeVariant}>
+                              {statusDisplay.displayText}
+                            </Badge>
+                            {statusDisplay.isExpired && (
+                              <div className="text-xs text-muted-foreground">
+                                Expired on {new Date(payment.due_date).toLocaleDateString()}
+                              </div>
+                            )}
+                            {/* Show transaction ID for successful payments */}
+                            {payment.status === 'paid' && payment.momo_financial_transaction_id && (
+                              <div className="text-xs text-muted-foreground">
+                                Txn: {payment.momo_financial_transaction_id}
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {/* Show transaction ID for successful payments */}
-                        {payment.status === 'paid' && payment.momo_financial_transaction_id && (
-                          <div className="text-xs text-muted-foreground">
-                            Txn: {payment.momo_financial_transaction_id}
-                          </div>
-                        )}
-                      </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <Badge variant={getInvoiceStatusBadgeVariant(payment.momo_invoice_status)}>

@@ -115,18 +115,41 @@ serve(async (req) => {
       });
     }
 
-    // Update payment status with clean app status mapping
+    // Update payment status with enhanced app status mapping including expiry logic
+    const currentTime = new Date().toISOString();
+    const now = new Date();
+    
     const updateData: any = {
       momo_invoice_status: status,
-      updated_at: new Date().toISOString()
+      updated_at: currentTime
     };
 
     let outcome = 'no_change';
 
-    // Clean App Status Mapping Implementation
+    // Enhanced Status Mapping with Expiry Logic
+    const dueDate = payment.due_date ? new Date(payment.due_date) : null;
+    const isExpired = dueDate && now > dueDate;
+
     if (status === 'CREATED' || status === 'PENDING') {
-      updateData.status = 'pending';
-      outcome = 'marked_pending';
+      if (isExpired) {
+        updateData.status = 'expired';
+        outcome = 'marked_expired';
+        
+        // Log expiry details
+        await supabase.from('debug_logs').insert({
+          function_name: 'mtn-momo-callback',
+          level: 'info',
+          message: 'Payment marked as expired in callback due to due_date',
+          metadata: {
+            external_id: externalId,
+            due_date: payment.due_date,
+            current_time: now.toISOString()
+          }
+        });
+      } else {
+        updateData.status = 'pending';
+        outcome = 'marked_pending';
+      }
     } else if (['SUCCESSFUL', 'SUCCESS'].includes(status)) {
       updateData.status = 'paid';
       updateData.paid_date = new Date().toISOString().split('T')[0];

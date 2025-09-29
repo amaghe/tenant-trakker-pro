@@ -7,7 +7,7 @@ export interface Payment {
   tenant_id: string;
   property_id: string;
   amount: number;
-  status: 'paid' | 'pending' | 'overdue' | 'failed';
+  status: 'paid' | 'pending' | 'overdue' | 'failed' | 'expired';
   payment_method: string;
   due_date: string;
   paid_date?: string;
@@ -50,7 +50,7 @@ export const usePayments = () => {
 
       const formattedPayments = data?.map(payment => ({
         ...payment,
-        status: payment.status as 'paid' | 'pending' | 'overdue',
+        status: payment.status as 'paid' | 'pending' | 'overdue' | 'failed' | 'expired',
         tenant: payment.tenants ? { name: payment.tenants.name, phone: payment.tenants.phone } : undefined,
         property: payment.properties ? {
           name: payment.properties.name,

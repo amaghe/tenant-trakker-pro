@@ -96,16 +96,40 @@ serve(async (req) => {
 
     await logDebug('info', 'Invoice status retrieved', { referenceId: ref, status: invoiceStatus, raw: statusData });
 
-    // Update payment record with clean app status mapping
+    // Update payment record with enhanced status mapping including expiry logic
     if (paymentId) {
+      // First get the payment record to check due_date for expiry logic
+      const { data: paymentData, error: fetchError } = await supabase
+        .from('payments')
+        .select('due_date')
+        .eq('id', paymentId)
+        .single();
+
+      if (fetchError) {
+        await logDebug('error', 'Failed to fetch payment for expiry check', { paymentId, error: fetchError });
+      }
+
       const updateData: any = {
         momo_invoice_status: invoiceStatus,
         updated_at: new Date().toISOString()
       };
 
-      // Clean App Status Mapping Implementation
+      // Enhanced Status Mapping with Expiry Logic
+      const now = new Date();
+      const dueDate = paymentData?.due_date ? new Date(paymentData.due_date) : null;
+      const isExpired = dueDate && now > dueDate;
+
       if (invoiceStatus === 'CREATED' || invoiceStatus === 'PENDING') {
-        updateData.status = 'pending';
+        if (isExpired) {
+          updateData.status = 'expired';
+          await logDebug('info', 'Payment marked as expired due to due_date', { 
+            paymentId, 
+            dueDate: paymentData?.due_date, 
+            currentTime: now.toISOString() 
+          });
+        } else {
+          updateData.status = 'pending';
+        }
       } else if (invoiceStatus === 'SUCCESSFUL') {
         updateData.status = 'paid';
         updateData.paid_date = new Date().toISOString().split('T')[0];
