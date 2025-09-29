@@ -71,14 +71,17 @@ const Invoices = () => {
       const tenant = tenants.find(t => t.id === selectedTenant);
       if (!tenant) throw new Error('Tenant not found');
 
-      // Create payment record first
+      // Calculate due date based on validity duration for coordination
+      const dueDate = new Date(Date.now() + validityDuration * 60 * 60 * 1000);
+      
+      // Create payment record with coordinated due date
       const paymentData = {
         tenant_id: selectedTenant,
         property_id: tenant.property_id,
         amount,
         status: 'pending' as const,
         payment_method: 'MTN Mobile Money',
-        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+        due_date: dueDate.toISOString().split('T')[0], // Coordinated with validity duration
       };
 
       const payment = await addPayment(paymentData, false);
@@ -202,6 +205,7 @@ const Invoices = () => {
       case 'paid': return 'default';
       case 'pending': return 'secondary';
       case 'overdue': return 'destructive';
+      case 'failed': return 'destructive';
       default: return 'secondary';
     }
   };
@@ -406,9 +410,24 @@ const Invoices = () => {
                       ₦{payment.amount.toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(payment.status)}>
-                        {payment.status}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant={getStatusBadgeVariant(payment.status)}>
+                          {payment.status}
+                        </Badge>
+                        {/* Show error details for failed payments */}
+                        {payment.status === 'failed' && (payment.momo_error_code || payment.momo_error_message) && (
+                          <div className="text-xs text-destructive">
+                            {payment.momo_error_code && `Code: ${payment.momo_error_code}`}
+                            {payment.momo_error_message && ` - ${payment.momo_error_message}`}
+                          </div>
+                        )}
+                        {/* Show transaction ID for successful payments */}
+                        {payment.status === 'paid' && payment.momo_financial_transaction_id && (
+                          <div className="text-xs text-muted-foreground">
+                            Txn: {payment.momo_financial_transaction_id}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={getInvoiceStatusBadgeVariant(payment.momo_invoice_status)}>

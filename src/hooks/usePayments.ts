@@ -7,12 +7,16 @@ export interface Payment {
   tenant_id: string;
   property_id: string;
   amount: number;
-  status: 'paid' | 'pending' | 'overdue';
+  status: 'paid' | 'pending' | 'overdue' | 'failed';
   payment_method: string;
   due_date: string;
   paid_date?: string;
   momo_reference_id?: string;
   momo_invoice_status?: string;
+  momo_financial_transaction_id?: string;
+  momo_error_code?: string;
+  momo_error_message?: string;
+  momo_external_id?: string;
   tenant?: {
     name: string;
     phone: string;

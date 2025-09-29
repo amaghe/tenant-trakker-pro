@@ -307,9 +307,9 @@ serve(async (req) => {
       responseData 
     }, user.id);
 
-    // Update payment record if paymentId provided
+    // Update payment record with clean status mapping
     if (paymentId) {
-      await logDebug('info', 'Updating payment record', { paymentId, referenceId });
+      await logDebug('info', 'Updating payment record with clean status mapping', { paymentId, referenceId });
       
       const { error: updateError } = await authSupabase
         .from('payments')
@@ -318,6 +318,7 @@ serve(async (req) => {
           payment_method: 'MTN Mobile Money',
           momo_reference_id: referenceId,
           momo_invoice_status: 'CREATED',
+          momo_external_id: invoicePayload.externalId,
           updated_at: new Date().toISOString()
         })
         .eq('id', paymentId);
@@ -325,7 +326,10 @@ serve(async (req) => {
       if (updateError) {
         await logDebug('error', 'Failed to update payment record', { updateError, paymentId });
       } else {
-        await logDebug('info', 'Payment record updated successfully');
+        await logDebug('info', 'Payment record updated with clean status mapping', {
+          status: 'pending',
+          externalId: invoicePayload.externalId
+        });
       }
     }
 

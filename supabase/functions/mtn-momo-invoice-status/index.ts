@@ -96,19 +96,32 @@ serve(async (req) => {
 
     await logDebug('info', 'Invoice status retrieved', { referenceId: ref, status: invoiceStatus, raw: statusData });
 
-    // Update payment record if paymentId provided
+    // Update payment record with clean app status mapping
     if (paymentId) {
       const updateData: any = {
         momo_invoice_status: invoiceStatus,
         updated_at: new Date().toISOString()
       };
 
-      // Update payment status based on invoice status
-      if (invoiceStatus === 'SUCCESSFUL') {
+      // Clean App Status Mapping Implementation
+      if (invoiceStatus === 'CREATED' || invoiceStatus === 'PENDING') {
+        updateData.status = 'pending';
+      } else if (invoiceStatus === 'SUCCESSFUL') {
         updateData.status = 'paid';
         updateData.paid_date = new Date().toISOString().split('T')[0];
+        
+        // Extract financial transaction ID from status data if available
+        if (statusData?.financialTransactionId) {
+          updateData.momo_financial_transaction_id = statusData.financialTransactionId;
+        }
       } else if (invoiceStatus === 'FAILED' || invoiceStatus === 'CANCELLED') {
         updateData.status = 'failed';
+        
+        // Store error details for troubleshooting
+        if (statusData?.reason) {
+          updateData.momo_error_code = statusData.reason.code || null;
+          updateData.momo_error_message = statusData.reason.message || null;
+        }
       }
 
       const { error: updateError } = await supabase
@@ -119,7 +132,12 @@ serve(async (req) => {
       if (updateError) {
         await logDebug('error', 'Failed to update payment record', { paymentId, error: updateError });
       } else {
-        await logDebug('info', 'Payment record updated', { paymentId, status: invoiceStatus });
+        await logDebug('info', 'Payment record updated with clean app status mapping', { 
+          paymentId, 
+          localStatus: updateData.status,
+          momoStatus: invoiceStatus,
+          financialTransactionId: updateData.momo_financial_transaction_id
+        });
       }
     }
 

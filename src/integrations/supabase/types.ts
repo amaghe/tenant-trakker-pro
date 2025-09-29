@@ -50,6 +50,10 @@ export type Database = {
           created_at: string
           due_date: string
           id: string
+          momo_error_code: string | null
+          momo_error_message: string | null
+          momo_external_id: string | null
+          momo_financial_transaction_id: string | null
           momo_invoice_status: string | null
           momo_reference_id: string | null
           paid_date: string | null
@@ -64,6 +68,10 @@ export type Database = {
           created_at?: string
           due_date: string
           id?: string
+          momo_error_code?: string | null
+          momo_error_message?: string | null
+          momo_external_id?: string | null
+          momo_financial_transaction_id?: string | null
           momo_invoice_status?: string | null
           momo_reference_id?: string | null
           paid_date?: string | null
@@ -78,6 +86,10 @@ export type Database = {
           created_at?: string
           due_date?: string
           id?: string
+          momo_error_code?: string | null
+          momo_error_message?: string | null
+          momo_external_id?: string | null
+          momo_financial_transaction_id?: string | null
           momo_invoice_status?: string | null
           momo_reference_id?: string | null
           paid_date?: string | null

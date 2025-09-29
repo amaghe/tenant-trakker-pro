@@ -89,7 +89,7 @@ serve(async (req) => {
       .from('payments')
       .select('*')
       .eq('momo_external_id', externalId)
-      .single();
+      .maybeSingle();
 
     if (findError || !payment) {
       console.error('Payment not found for externalId:', externalId);
@@ -115,32 +115,41 @@ serve(async (req) => {
       });
     }
 
-    // Determine payment status and updates
-    let paymentStatus = payment.status;
-    let paidDate = payment.paid_date;
-    let momoFinancialTransactionId = payment.momo_financial_transaction_id;
+    // Update payment status with clean app status mapping
+    const updateData: any = {
+      momo_invoice_status: status,
+      updated_at: new Date().toISOString()
+    };
+
     let outcome = 'no_change';
 
-    if (['SUCCESSFUL', 'SUCCESS', 'paid'].includes(status)) {
-      paymentStatus = 'paid';
-      paidDate = new Date().toISOString().split('T')[0];
+    // Clean App Status Mapping Implementation
+    if (status === 'CREATED' || status === 'PENDING') {
+      updateData.status = 'pending';
+      outcome = 'marked_pending';
+    } else if (['SUCCESSFUL', 'SUCCESS'].includes(status)) {
+      updateData.status = 'paid';
+      updateData.paid_date = new Date().toISOString().split('T')[0];
+      
       if (financialTransactionId) {
-        momoFinancialTransactionId = financialTransactionId;
+        updateData.momo_financial_transaction_id = financialTransactionId;
       }
       outcome = 'marked_paid';
     } else if (['FAILED', 'REJECTED', 'DECLINED'].includes(status)) {
-      paymentStatus = 'failed';
+      updateData.status = 'failed';
+      
+      // Store error details for troubleshooting (if available in callback)
+      if (callbackData.reason) {
+        updateData.momo_error_code = callbackData.reason.code || null;
+        updateData.momo_error_message = callbackData.reason.message || null;
+      }
       outcome = 'marked_failed';
     }
 
     // Update the payment record
     const { error: updateError } = await supabase
       .from('payments')
-      .update({
-        status: paymentStatus,
-        paid_date: paidDate,
-        momo_financial_transaction_id: momoFinancialTransactionId
-      })
+      .update(updateData)
       .eq('id', payment.id);
 
     if (updateError) {
@@ -183,7 +192,7 @@ serve(async (req) => {
       }
     });
 
-    console.log(`Payment ${payment.id} updated to status: ${paymentStatus}`);
+    console.log(`Payment ${payment.id} updated to status: ${updateData.status}`);
 
     return new Response(JSON.stringify({
       ok: true
