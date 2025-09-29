@@ -56,6 +56,7 @@ export type Database = {
           momo_financial_transaction_id: string | null
           momo_invoice_status: string | null
           momo_reference_id: string | null
+          momo_request_status: string | null
           paid_date: string | null
           payment_method: string
           property_id: string | null
@@ -74,6 +75,7 @@ export type Database = {
           momo_financial_transaction_id?: string | null
           momo_invoice_status?: string | null
           momo_reference_id?: string | null
+          momo_request_status?: string | null
           paid_date?: string | null
           payment_method: string
           property_id?: string | null
@@ -92,6 +94,7 @@ export type Database = {
           momo_financial_transaction_id?: string | null
           momo_invoice_status?: string | null
           momo_reference_id?: string | null
+          momo_request_status?: string | null
           paid_date?: string | null
           payment_method?: string
           property_id?: string | null

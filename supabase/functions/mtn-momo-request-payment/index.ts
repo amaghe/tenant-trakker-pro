@@ -231,7 +231,7 @@ serve(async (req) => {
           status: 'pending',
           payment_method: 'MTN Mobile Money',
           momo_reference_id: referenceId,
-          momo_invoice_status: 'CREATED',
+          momo_request_status: 'PENDING',
           updated_at: new Date().toISOString()
         })
         .eq('id', paymentId);

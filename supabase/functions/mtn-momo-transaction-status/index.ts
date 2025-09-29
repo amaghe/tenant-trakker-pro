@@ -259,6 +259,7 @@ serve(async (req) => {
 
       const updateData: any = {
         status: paymentStatus,
+        momo_request_status: transactionData.status?.toUpperCase(),
         updated_at: new Date().toISOString()
       };
 
