@@ -28,10 +28,17 @@ async function logDebug(level: string, message: string, metadata?: any, userId?:
 }
 
 serve(async (req) => {
+  console.log('=== MTN MOMO INVOICE FUNCTION STARTED ===');
+  console.log('Request method:', req.method);
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
+
+  console.log('Processing invoice creation request...');
 
   try {
     // Verify user authentication and admin role

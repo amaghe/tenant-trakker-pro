@@ -13,9 +13,26 @@ export type GetInvoiceStatusArgs = { paymentId?: string; referenceId?: string; }
 export type CancelInvoiceArgs = { paymentId?: string; referenceId?: string; externalId?: string };
 
 export async function createInvoice(args: CreateInvoiceArgs) {
-  const { data, error } = await supabase.functions.invoke('mtn-momo-invoice-CreateInvoice', { body: args });
-  if (error) throw error;
-  return data as { success: boolean; referenceId: string; externalId: string };
+  console.log('=== CALLING MTN MOMO INVOICE FUNCTION ===');
+  console.log('Function name: mtn-momo-invoice-CreateInvoice');
+  console.log('Arguments:', args);
+  
+  try {
+    const { data, error } = await supabase.functions.invoke('mtn-momo-invoice-CreateInvoice', { body: args });
+    
+    console.log('Function response - data:', data);
+    console.log('Function response - error:', error);
+    
+    if (error) {
+      console.error('Function invocation error:', error);
+      throw error;
+    }
+    
+    return data as { success: boolean; referenceId: string; externalId: string };
+  } catch (err) {
+    console.error('Error in createInvoice:', err);
+    throw err;
+  }
 }
 
 export async function getInvoiceStatus(args: GetInvoiceStatusArgs) {
