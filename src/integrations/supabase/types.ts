@@ -195,11 +195,16 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          deposit: number | null
           email: string
+          emergency_contacts: Json | null
           id: string
+          id_document_url: string | null
+          lease_document_url: string | null
           lease_end: string
           lease_start: string
           name: string
+          notes: string | null
           phone: string
           property_id: string | null
           rent: number
@@ -209,11 +214,16 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          deposit?: number | null
           email: string
+          emergency_contacts?: Json | null
           id?: string
+          id_document_url?: string | null
+          lease_document_url?: string | null
           lease_end: string
           lease_start: string
           name: string
+          notes?: string | null
           phone: string
           property_id?: string | null
           rent: number
@@ -223,11 +233,16 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          deposit?: number | null
           email?: string
+          emergency_contacts?: Json | null
           id?: string
+          id_document_url?: string | null
+          lease_document_url?: string | null
           lease_end?: string
           lease_start?: string
           name?: string
+          notes?: string | null
           phone?: string
           property_id?: string | null
           rent?: number

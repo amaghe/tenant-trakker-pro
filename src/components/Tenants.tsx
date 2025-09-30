@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, MapPin, Calendar, DollarSign, Loader2, UserPlus, Edit2, Trash2, Users, MessageCircle, Smartphone, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Calendar, DollarSign, Loader2, UserPlus, Edit2, Trash2, Users, MessageCircle, Smartphone, Send, Eye } from "lucide-react";
 import { useTenants } from "@/hooks/useTenants";
 import { usePayments } from "@/hooks/usePayments";
 import { useMtnMomo } from "@/hooks/useMtnMomo";
@@ -228,7 +229,7 @@ const Tenants = () => {
                   <div className="flex items-center mt-1">
                     <MapPin className="w-4 h-4 text-muted-foreground mr-1" />
                     <span className="text-sm text-muted-foreground">
-                      {tenant.property ? `${tenant.property.name} - ${tenant.property.address}` : 'No property assigned'}
+                      {tenant.status === 'inactive' ? 'N/A' : (tenant.property ? `${tenant.property.name} - ${tenant.property.address}` : 'No property assigned')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-2">
@@ -276,6 +277,12 @@ const Tenants = () => {
               </div>
 
               <div className="flex space-x-2 pt-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/tenant/${tenant.id}`}>
+                    <Eye className="w-4 h-4 mr-2" />
+                    View
+                  </Link>
+                </Button>
                 <Button variant="outline" size="sm" className="flex-1">
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Message

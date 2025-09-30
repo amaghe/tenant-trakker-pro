@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export interface EmergencyContact {
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
 export interface Tenant {
   id: string;
   property_id?: string;
@@ -11,8 +17,13 @@ export interface Tenant {
   rent: number;
   lease_start: string;
   lease_end: string;
-  status: 'active' | 'overdue' | 'pending';
+  status: 'active' | 'inactive' | 'overdue' | 'pending';
   avatar_url?: string;
+  emergency_contacts?: EmergencyContact[];
+  id_document_url?: string;
+  notes?: string;
+  deposit?: number;
+  lease_document_url?: string;
   property?: {
     name: string;
     address: string;
@@ -40,7 +51,11 @@ export const useTenants = () => {
 
       const formattedTenants = data?.map(tenant => ({
         ...tenant,
-        status: tenant.status as 'active' | 'overdue' | 'pending',
+        status: tenant.status as 'active' | 'inactive' | 'overdue' | 'pending',
+        emergency_contacts: tenant.emergency_contacts ? 
+          (Array.isArray(tenant.emergency_contacts) ? 
+            tenant.emergency_contacts as unknown as EmergencyContact[] : 
+            JSON.parse(tenant.emergency_contacts as string) as EmergencyContact[]) : [],
         property: tenant.properties ? {
           name: tenant.properties.name,
           address: tenant.properties.address
@@ -62,9 +77,14 @@ export const useTenants = () => {
 
   const addTenant = async (tenantData: Omit<Tenant, 'id'>) => {
     try {
+      const insertData = {
+        ...tenantData,
+        emergency_contacts: JSON.stringify(tenantData.emergency_contacts || [])
+      };
+      
       const { data, error } = await supabase
         .from('tenants')
-        .insert([tenantData])
+        .insert([insertData])
         .select()
         .single();
 
@@ -89,9 +109,14 @@ export const useTenants = () => {
 
   const updateTenant = async (id: string, updates: Partial<Tenant>) => {
     try {
+      const updateData = {
+        ...updates,
+        emergency_contacts: updates.emergency_contacts ? JSON.stringify(updates.emergency_contacts) : undefined
+      };
+      
       const { data, error } = await supabase
         .from('tenants')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
