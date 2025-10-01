@@ -146,7 +146,7 @@ export default function TenantDetail() {
           <CardContent className="text-center py-8">
             <p className="text-muted-foreground">Tenant not found</p>
             <Button asChild className="mt-4">
-              <Link to="/">Back to Tenants</Link>
+              <Link to="/?tab=tenants">Back to Tenants</Link>
             </Button>
           </CardContent>
         </Card>
@@ -160,7 +160,7 @@ export default function TenantDetail() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/">
+            <Link to="/?tab=tenants">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Tenants
             </Link>

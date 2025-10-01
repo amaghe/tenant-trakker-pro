@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Dashboard from "@/components/Dashboard";
 import Properties from "@/components/Properties";
@@ -12,9 +12,18 @@ import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabParam || "dashboard");
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // Enable payment notifications across the app
   usePaymentNotifications();
