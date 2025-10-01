@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, MapPin, Calendar, DollarSign, Loader2, UserPlus, Edit2, Trash2, Users, MessageCircle, Smartphone, Send, Eye } from "lucide-react";
+import { Mail, Phone, Calendar, DollarSign, Loader2, UserPlus, Edit2, Trash2, Users, MessageCircle, Smartphone, Send, Eye, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useTenants } from "@/hooks/useTenants";
 import { usePayments } from "@/hooks/usePayments";
 import { useMtnMomo } from "@/hooks/useMtnMomo";
@@ -209,175 +211,8 @@ const Tenants = () => {
         </Card>
       </div>
 
-      {/* Tenants Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {tenants.map((tenant) => {
-          const recentPayment = getTenantPaymentStatus(tenant.id);
-          
-          return (
-          <Card key={tenant.id} className="bg-gradient-card shadow-card hover:shadow-elegant transition-all">
-            <CardHeader className="pb-4">
-              <div className="flex items-start space-x-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={tenant.avatar_url} alt={tenant.name} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                    {tenant.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="ml-4 flex-1">
-                  <h3 className="font-semibold text-foreground">{tenant.name}</h3>
-                  <div className="flex items-center mt-1">
-                    <MapPin className="w-4 h-4 text-muted-foreground mr-1" />
-                    <span className="text-sm text-muted-foreground">
-                      {tenant.status === 'inactive' ? 'N/A' : (tenant.property ? `${tenant.property.name} - ${tenant.property.address}` : 'No property assigned')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge 
-                      variant={getStatusColor(tenant.status)} 
-                      className="mt-0"
-                    >
-                      {tenant.status}
-                    </Badge>
-                    {recentPayment && (
-                      <Badge 
-                        variant={recentPayment.status === 'paid' ? 'default' : recentPayment.status === 'pending' ? 'secondary' : 'destructive'}
-                        className="text-xs"
-                      >
-                        {recentPayment.status === 'pending' ? 'Invoice Created' : 
-                         recentPayment.status === 'paid' ? 'Recently Paid' : 
-                         'Invoice Overdue'}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="flex items-center space-x-2">
-                  <Mail className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-muted-foreground">{tenant.email}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-muted-foreground">{tenant.phone}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <DollarSign className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-muted-foreground">₦{tenant.rent.toLocaleString()}/month</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-muted-foreground">
-                    Lease: {new Date(tenant.lease_start).toLocaleDateString()} - {new Date(tenant.lease_end).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex space-x-2 pt-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={`/tenant/${tenant.id}`}>
-                    <Eye className="w-4 h-4 mr-2" />
-                    View
-                  </Link>
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Message
-                </Button>
-                <Dialog open={paymentDialogOpen === tenant.id} onOpenChange={(open) => setPaymentDialogOpen(open ? tenant.id : null)}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex-1 bg-success/10 hover:bg-success/20 text-success border-success/20">
-                      <Smartphone className="w-4 h-4 mr-2" />
-                      Create Invoice
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
-                        <Smartphone className="w-5 h-5 text-success" />
-                        Create Invoice for {tenant.name}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Phone Number</Label>
-                        <Input value={tenant.phone} disabled className="bg-muted" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Amount (₦)</Label>
-                        <Input
-                          type="number"
-                          value={paymentAmount || tenant.rent}
-                          onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                          placeholder={`Default: ₦${tenant.rent.toLocaleString()}`}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Default is monthly rent amount. You can change it for custom amounts.
-                        </p>
-                      </div>
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="outline" onClick={() => setPaymentDialogOpen(null)}>
-                          Cancel
-                        </Button>
-                        <Button 
-                          onClick={() => handleSendPaymentRequest(tenant)}
-                          disabled={mtnLoading}
-                          className="bg-success hover:bg-success/90 text-white"
-                        >
-                          {mtnLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                          <Send className="w-4 h-4 mr-2" />
-                          Create Invoice
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <TenantFormDialog
-                  trigger={
-                    <Button variant="ghost" size="sm">
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit
-                    </Button>
-                  }
-                  tenant={tenant}
-                  onSubmit={(data) => handleUpdateTenant(data, tenant.id)}
-                  loading={formLoading}
-                />
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Tenant</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete {tenant.name}? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={() => handleDeleteTenant(tenant.id)}
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardContent>
-          </Card>
-        )})}
-      </div>
-
-      {tenants.length === 0 && (
+      {/* Tenants List */}
+      {tenants.length === 0 ? (
         <Card className="bg-gradient-card shadow-card">
           <CardContent className="p-8 text-center">
             <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -393,6 +228,205 @@ const Tenants = () => {
               onSubmit={handleAddTenant}
               loading={formLoading}
             />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-gradient-card shadow-card">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-b border-border">
+                    <TableHead className="font-semibold">Tenant</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Lease Period</TableHead>
+                    <TableHead className="font-semibold">Contact</TableHead>
+                    <TableHead className="font-semibold text-right">Rent</TableHead>
+                    <TableHead className="font-semibold text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tenants.map((tenant) => {
+                    const recentPayment = getTenantPaymentStatus(tenant.id);
+                    
+                    return (
+                      <TableRow key={tenant.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={tenant.avatar_url} alt={tenant.name} />
+                              <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
+                                {tenant.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium text-foreground">{tenant.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {tenant.status === 'inactive' ? 'N/A' : (tenant.property ? tenant.property.name : 'Unassigned')}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <Badge 
+                              variant={getStatusColor(tenant.status)} 
+                              className="w-fit"
+                            >
+                              {tenant.status}
+                            </Badge>
+                            {recentPayment && (
+                              <Badge 
+                                variant={recentPayment.status === 'paid' ? 'default' : recentPayment.status === 'pending' ? 'secondary' : 'destructive'}
+                                className="text-xs w-fit"
+                              >
+                                {recentPayment.status === 'pending' ? 'Invoice' : 
+                                 recentPayment.status === 'paid' ? 'Paid' : 
+                                 'Overdue'}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                            <Calendar className="w-4 h-4 flex-shrink-0" />
+                            <div className="flex flex-col">
+                              <span className="text-xs">Start: {new Date(tenant.lease_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                              <span className="text-xs">End: {new Date(tenant.lease_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1 text-sm">
+                            <div className="flex items-center space-x-1 text-muted-foreground">
+                              <Mail className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate max-w-[200px]">{tenant.email}</span>
+                            </div>
+                            <div className="flex items-center space-x-1 text-muted-foreground">
+                              <Phone className="w-3 h-3 flex-shrink-0" />
+                              <span>{tenant.phone}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end space-x-1 font-medium">
+                            <DollarSign className="w-4 h-4 text-primary" />
+                            <span>₦{tenant.rent.toLocaleString()}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">/month</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end space-x-1">
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link to={`/tenant/${tenant.id}`}>
+                                <Eye className="w-4 h-4" />
+                              </Link>
+                            </Button>
+                            
+                            <Dialog open={paymentDialogOpen === tenant.id} onOpenChange={(open) => setPaymentDialogOpen(open ? tenant.id : null)}>
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-success hover:text-success">
+                                  <Smartphone className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-[400px]">
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    <Smartphone className="w-5 h-5 text-success" />
+                                    Create Invoice for {tenant.name}
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label>Phone Number</Label>
+                                    <Input value={tenant.phone} disabled className="bg-muted" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Amount (₦)</Label>
+                                    <Input
+                                      type="number"
+                                      value={paymentAmount || tenant.rent}
+                                      onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                                      placeholder={`Default: ₦${tenant.rent.toLocaleString()}`}
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                      Default is monthly rent amount. You can change it for custom amounts.
+                                    </p>
+                                  </div>
+                                  <div className="flex justify-end space-x-2 pt-4">
+                                    <Button variant="outline" onClick={() => setPaymentDialogOpen(null)}>
+                                      Cancel
+                                    </Button>
+                                    <Button 
+                                      onClick={() => handleSendPaymentRequest(tenant)}
+                                      disabled={mtnLoading}
+                                      className="bg-success hover:bg-success/90 text-white"
+                                    >
+                                      {mtnLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                      <Send className="w-4 h-4 mr-2" />
+                                      Create Invoice
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <TenantFormDialog
+                                  trigger={
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                      <Edit2 className="w-4 h-4 mr-2" />
+                                      Edit
+                                    </DropdownMenuItem>
+                                  }
+                                  tenant={tenant}
+                                  onSubmit={(data) => handleUpdateTenant(data, tenant.id)}
+                                  loading={formLoading}
+                                />
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem 
+                                      onSelect={(e) => e.preventDefault()}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Tenant</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete {tenant.name}? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => handleDeleteTenant(tenant.id)}
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}
