@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building, MapPin, Bed, Bath, Square, DollarSign, User, Loader2 } from "lucide-react";
+import { Building, Loader2, Pencil } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import PropertyEditDialog from "./PropertyEditDialog";
 import { useProperties, type Property } from "@/hooks/useProperties";
 
@@ -62,78 +62,59 @@ const Properties = () => {
         </Button>
       </div>
 
-      {/* Properties Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {properties.map((property) => (
-          <Card key={property.id} className="bg-gradient-card shadow-card hover:shadow-elegant transition-all">
-            <CardHeader className="pb-4">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg font-semibold text-foreground">
-                  {property.name}
-                </CardTitle>
-                <Badge 
-                  variant={property.status === 'occupied' ? 'default' : 'secondary'}
-                  className={property.status === 'occupied' ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'}
-                >
-                  {property.status}
-                </Badge>
-              </div>
-              <div className="flex items-center text-muted-foreground text-sm">
-                <MapPin className="w-4 h-4 mr-1" />
-                {property.address}
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {/* Property Details */}
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="flex flex-col items-center">
-                  <Bed className="w-4 h-4 text-primary mb-1" />
-                  <span className="text-sm text-muted-foreground">{property.bedrooms} Bed</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <Bath className="w-4 h-4 text-primary mb-1" />
-                  <span className="text-sm text-muted-foreground">{property.bathrooms} Bath</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <Square className="w-4 h-4 text-primary mb-1" />
-                  <span className="text-sm text-muted-foreground">{property.size} sqft</span>
-                </div>
-              </div>
-
-              {/* Rent and Tenant Info */}
-              <div className="pt-2 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <DollarSign className="w-4 h-4 text-success mr-1" />
-                    <span className="font-semibold text-foreground">₦{property.rent.toLocaleString()}/month</span>
-                  </div>
-                  {property.tenant && (
-                    <div className="flex items-center text-muted-foreground text-sm">
-                      <User className="w-4 h-4 mr-1" />
-                      {property.tenant}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex space-x-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  View Details
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex-1"
-                  onClick={() => handleEditProperty(property)}
-                >
-                  Edit
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Properties Table */}
+      <div className="bg-card rounded-lg border shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Property Name</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Rent</TableHead>
+              <TableHead>Occupant</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {properties.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  No properties found. Add your first property to get started.
+                </TableCell>
+              </TableRow>
+            ) : (
+              properties.map((property) => (
+                <TableRow key={property.id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="font-medium text-foreground">
+                    {property.name}
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant={property.status === 'occupied' ? 'default' : 'secondary'}
+                      className={property.status === 'occupied' ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'}
+                    >
+                      {property.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-foreground">
+                    ₦{property.rent.toLocaleString()}/mo
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {property.tenant || '—'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleEditProperty(property)}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <PropertyEditDialog
