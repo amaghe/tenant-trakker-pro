@@ -68,6 +68,8 @@ const Properties = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Property Name</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>Size</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Rent</TableHead>
               <TableHead>Occupant</TableHead>
@@ -77,7 +79,7 @@ const Properties = () => {
           <TableBody>
             {properties.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   No properties found. Add your first property to get started.
                 </TableCell>
               </TableRow>
@@ -86,6 +88,12 @@ const Properties = () => {
                 <TableRow key={property.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium text-foreground">
                     {property.name}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {property.address}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {property.size} sqft
                   </TableCell>
                   <TableCell>
                     <Badge 
