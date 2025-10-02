@@ -29,7 +29,7 @@ export const useProperties = () => {
         .from('properties')
         .select(`
           *,
-          tenants!inner(name)
+          tenants(name)
         `);
 
       if (error) throw error;
