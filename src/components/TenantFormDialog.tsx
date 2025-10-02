@@ -260,7 +260,7 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Lease Start Date</Label>
-              <Popover>
+              <Popover modal={false}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -286,7 +286,7 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
             </div>
             <div className="space-y-2">
               <Label>Lease End Date</Label>
-              <Popover>
+              <Popover modal={false}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
