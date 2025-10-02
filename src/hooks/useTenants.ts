@@ -109,8 +109,11 @@ export const useTenants = () => {
 
   const updateTenant = async (id: string, updates: Partial<Tenant>) => {
     try {
+      // Remove joined fields and read-only fields that shouldn't be updated
+      const { property, properties, created_at, updated_at, ...cleanUpdates } = updates as any;
+      
       const updateData = {
-        ...updates,
+        ...cleanUpdates,
         emergency_contacts: updates.emergency_contacts ? JSON.stringify(updates.emergency_contacts) : undefined
       };
       
