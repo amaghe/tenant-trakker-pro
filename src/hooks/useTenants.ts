@@ -111,7 +111,7 @@ export const useTenants = () => {
   const updateTenant = async (id: string, updates: Partial<Tenant>) => {
     try {
       // Remove joined fields and read-only fields that shouldn't be updated
-      const { properties, created_at, updated_at, ...cleanUpdates } = updates as any;
+      const { properties, created_at, updated_at, property_ids, ...cleanUpdates } = updates as any;
       
       const updateData = {
         ...cleanUpdates,
