@@ -78,7 +78,7 @@ const Invoices = () => {
       // Create payment record with coordinated due date
       const paymentData = {
         tenant_id: selectedTenant,
-        property_id: tenant.property_id,
+        property_id: tenant.properties && tenant.properties.length > 0 ? tenant.properties[0].id : null,
         amount,
         status: 'pending' as const,
         payment_method: 'MTN Mobile Money',

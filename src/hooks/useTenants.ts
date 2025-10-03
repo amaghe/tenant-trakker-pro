@@ -10,7 +10,6 @@ export interface EmergencyContact {
 
 export interface Tenant {
   id: string;
-  property_id?: string;
   name: string;
   email: string;
   phone: string;
@@ -24,10 +23,11 @@ export interface Tenant {
   notes?: string;
   deposit?: number;
   lease_document_url?: string;
-  property?: {
+  properties?: Array<{
+    id: string;
     name: string;
     address: string;
-  };
+  }>;
   created_at?: string;
   updated_at?: string;
 }
@@ -44,7 +44,7 @@ export const useTenants = () => {
         .from('tenants')
         .select(`
           *,
-          properties(name, address)
+          properties(id, name, address)
         `);
 
       if (error) throw error;
@@ -56,10 +56,11 @@ export const useTenants = () => {
           (Array.isArray(tenant.emergency_contacts) ? 
             tenant.emergency_contacts as unknown as EmergencyContact[] : 
             JSON.parse(tenant.emergency_contacts as string) as EmergencyContact[]) : [],
-        property: tenant.properties ? {
-          name: tenant.properties.name,
-          address: tenant.properties.address
-        } : undefined
+        properties: Array.isArray(tenant.properties) ? tenant.properties.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          address: p.address
+        })) : []
       })) || [];
 
       setTenants(formattedTenants);
@@ -110,7 +111,7 @@ export const useTenants = () => {
   const updateTenant = async (id: string, updates: Partial<Tenant>) => {
     try {
       // Remove joined fields and read-only fields that shouldn't be updated
-      const { property, properties, created_at, updated_at, ...cleanUpdates } = updates as any;
+      const { properties, created_at, updated_at, ...cleanUpdates } = updates as any;
       
       const updateData = {
         ...cleanUpdates,

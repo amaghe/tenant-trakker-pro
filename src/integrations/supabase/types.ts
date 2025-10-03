@@ -160,6 +160,7 @@ export type Database = {
           rent: number
           size: number
           status: string
+          tenant_id: string | null
           type: string
           updated_at: string
         }
@@ -173,6 +174,7 @@ export type Database = {
           rent: number
           size: number
           status: string
+          tenant_id?: string | null
           type: string
           updated_at?: string
         }
@@ -186,10 +188,19 @@ export type Database = {
           rent?: number
           size?: number
           status?: string
+          tenant_id?: string | null
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenants: {
         Row: {
@@ -206,7 +217,6 @@ export type Database = {
           name: string
           notes: string | null
           phone: string
-          property_id: string | null
           rent: number
           status: string
           updated_at: string
@@ -225,7 +235,6 @@ export type Database = {
           name: string
           notes?: string | null
           phone: string
-          property_id?: string | null
           rent: number
           status: string
           updated_at?: string
@@ -244,20 +253,11 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string
-          property_id?: string | null
           rent?: number
           status?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "tenants_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

@@ -244,26 +244,26 @@ export default function TenantDetail() {
             </div>
 
             <div>
-              <Label htmlFor="property">Property</Label>
+              <Label>Properties</Label>
               {formData.status === 'inactive' ? (
                 <Input value="N/A" disabled />
               ) : (
-                <Select
-                  value={formData.property_id || ''}
-                  onValueChange={(value) => handleInputChange('property_id', value)}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select property" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties.map((property) => (
-                      <SelectItem key={property.id} value={property.id}>
-                        {property.name} - {property.address}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  {tenant?.properties && tenant.properties.length > 0 ? (
+                    tenant.properties.map((property) => (
+                      <div key={property.id} className="flex items-center justify-between p-2 border rounded">
+                        <span className="text-sm">{property.name} - {property.address}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No properties assigned</p>
+                  )}
+                  {isEditing && (
+                    <p className="text-sm text-muted-foreground">
+                      Manage property assignments from the Properties page
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </CardContent>

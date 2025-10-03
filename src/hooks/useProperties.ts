@@ -12,6 +12,7 @@ export interface Property {
   size: number;
   rent: number;
   status: 'available' | 'occupied';
+  tenant_id?: string;
   tenant?: string;
   created_at?: string;
   updated_at?: string;
@@ -82,16 +83,19 @@ export const useProperties = () => {
 
   const updateProperty = async (id: string, updates: Partial<Property>) => {
     try {
+      // Remove joined fields and read-only fields
+      const { tenant, created_at, updated_at, ...cleanUpdates } = updates as any;
+      
       const { data, error } = await supabase
         .from('properties')
-        .update(updates)
+        .update(cleanUpdates)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
 
-      setProperties(prev => prev.map(p => p.id === id ? { ...p, ...data, status: data.status as 'available' | 'occupied' } : p));
+      await fetchProperties(); // Refetch to get updated tenant data
       toast({
         title: "Success",
         description: "Property updated successfully",
@@ -102,6 +106,31 @@ export const useProperties = () => {
       toast({
         title: "Error",
         description: "Failed to update property",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const assignTenantToProperty = async (propertyId: string, tenantId: string | null) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ tenant_id: tenantId })
+        .eq('id', propertyId);
+
+      if (error) throw error;
+
+      await fetchProperties();
+      toast({
+        title: "Success",
+        description: tenantId ? "Tenant assigned to property" : "Tenant removed from property",
+      });
+    } catch (error) {
+      console.error('Error assigning tenant:', error);
+      toast({
+        title: "Error",
+        description: "Failed to assign tenant to property",
         variant: "destructive",
       });
       throw error;
@@ -143,6 +172,7 @@ export const useProperties = () => {
     addProperty,
     updateProperty,
     deleteProperty,
+    assignTenantToProperty,
     refetch: fetchProperties
   };
 };

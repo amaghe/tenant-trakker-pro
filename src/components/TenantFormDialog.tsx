@@ -31,7 +31,7 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
     name: '',
     email: '',
     phone: '',
-    property_id: '',
+    property_ids: [] as string[],
     rent: '',
     deposit: '',
     status: 'active' as 'active' | 'inactive' | 'overdue' | 'pending',
@@ -49,7 +49,7 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
         name: tenant.name || '',
         email: tenant.email || '',
         phone: tenant.phone || '',
-        property_id: tenant.property_id || '',
+        property_ids: tenant.properties?.map(p => p.id) || [],
         rent: tenant.rent?.toString() || '',
         deposit: tenant.deposit?.toString() || '',
         status: tenant.status || 'active',
@@ -65,7 +65,7 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
         name: '',
         email: '',
         phone: '',
-        property_id: '',
+        property_ids: [],
         rent: '',
         deposit: '',
         status: 'active' as 'active' | 'inactive' | 'overdue' | 'pending',
@@ -214,22 +214,52 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="property">Property</Label>
+            <Label htmlFor="property">Properties</Label>
             {formData.status === 'inactive' ? (
               <Input value="N/A" disabled />
             ) : (
-              <Select value={formData.property_id} onValueChange={(value) => setFormData({...formData, property_id: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select property" />
-                </SelectTrigger>
-                <SelectContent>
-                  {properties.map((property) => (
-                    <SelectItem key={property.id} value={property.id}>
-                      {property.name} - {property.address}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {formData.property_ids.map((propertyId) => {
+                  const property = properties.find(p => p.id === propertyId);
+                  return property ? (
+                    <div key={propertyId} className="flex items-center justify-between p-2 border rounded">
+                      <span className="text-sm">{property.name} - {property.address}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormData({
+                          ...formData,
+                          property_ids: formData.property_ids.filter(id => id !== propertyId)
+                        })}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : null;
+                })}
+                <Select 
+                  value="" 
+                  onValueChange={(value) => {
+                    if (value && !formData.property_ids.includes(value)) {
+                      setFormData({...formData, property_ids: [...formData.property_ids, value]});
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Add property" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {properties
+                      .filter(p => !p.tenant_id || formData.property_ids.includes(p.id))
+                      .map((property) => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.name} - {property.address}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
 
