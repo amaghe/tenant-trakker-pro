@@ -78,9 +78,12 @@ export const useTenants = () => {
 
   const addTenant = async (tenantData: Omit<Tenant, 'id'>) => {
     try {
+      // Extract property_ids before inserting tenant
+      const { property_ids, ...cleanTenantData } = tenantData as any;
+      
       const insertData = {
-        ...tenantData,
-        emergency_contacts: JSON.stringify(tenantData.emergency_contacts || [])
+        ...cleanTenantData,
+        emergency_contacts: JSON.stringify(cleanTenantData.emergency_contacts || [])
       };
       
       const { data, error } = await supabase
@@ -90,6 +93,19 @@ export const useTenants = () => {
         .single();
 
       if (error) throw error;
+
+      // Now assign properties to this tenant
+      if (property_ids && property_ids.length > 0) {
+        const { error: propertyError } = await supabase
+          .from('properties')
+          .update({ tenant_id: data.id })
+          .in('id', property_ids);
+
+        if (propertyError) {
+          console.error('Error assigning properties:', propertyError);
+          // Don't throw - tenant was created successfully
+        }
+      }
 
       await fetchTenants(); // Refetch to get property data
       toast({
@@ -127,6 +143,27 @@ export const useTenants = () => {
 
       if (error) throw error;
 
+      // Handle property assignments
+      if (property_ids !== undefined) {
+        // First, unassign all properties currently assigned to this tenant
+        await supabase
+          .from('properties')
+          .update({ tenant_id: null })
+          .eq('tenant_id', id);
+
+        // Then assign the selected properties to this tenant
+        if (property_ids.length > 0) {
+          const { error: propertyError } = await supabase
+            .from('properties')
+            .update({ tenant_id: id })
+            .in('id', property_ids);
+
+          if (propertyError) {
+            console.error('Error assigning properties:', propertyError);
+          }
+        }
+      }
+
       await fetchTenants(); // Refetch to get updated property data
       toast({
         title: "Success",
@@ -146,6 +183,12 @@ export const useTenants = () => {
 
   const deleteTenant = async (id: string) => {
     try {
+      // First, unassign all properties from this tenant
+      await supabase
+        .from('properties')
+        .update({ tenant_id: null })
+        .eq('tenant_id', id);
+
       const { error } = await supabase
         .from('tenants')
         .delete()
