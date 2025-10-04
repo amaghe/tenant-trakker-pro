@@ -251,7 +251,14 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
                   </SelectTrigger>
                   <SelectContent>
                     {properties
-                      .filter(p => !p.tenant_id || formData.property_ids.includes(p.id))
+                      .filter(p => 
+                        // Show if property is unassigned
+                        !p.tenant_id || 
+                        // Show if property is already assigned to this tenant
+                        (tenant && p.tenant_id === tenant.id) ||
+                        // Show if property is in the current selection
+                        formData.property_ids.includes(p.id)
+                      )
                       .map((property) => (
                         <SelectItem key={property.id} value={property.id}>
                           {property.name} - {property.address}
