@@ -58,6 +58,7 @@ const getAssignedPropertyName = (tenantId: string) => propertyByTenantId.get(ten
     setFormLoading(true);
     try {
       await updateTenant(tenantId, tenantData);
+      await refetchProperties(); // ← ensure property name updates without page reload
     } finally {
       setFormLoading(false);
     }
