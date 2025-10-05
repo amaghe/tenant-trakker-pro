@@ -16,6 +16,7 @@ import { useMtnMomo } from "@/hooks/useMtnMomo";
 import TenantFormDialog from "./TenantFormDialog";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useProperties } from '@/hooks/useProperties';
 
 const Tenants = () => {
   const { toast } = useToast();
