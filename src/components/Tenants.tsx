@@ -324,7 +324,7 @@ const getAssignedPropertyName = (tenantId: string) => propertyByTenantId.get(ten
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end space-x-1 font-medium">
                             <DollarSign className="w-4 h-4 text-primary" />
-                            <span>₦{tenant.rent.toLocaleString()}</span>
+                            <span>R₣{tenant.rent.toLocaleString()}</span>
                           </div>
                           <span className="text-xs text-muted-foreground">/month</span>
                         </TableCell>
