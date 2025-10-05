@@ -262,12 +262,7 @@ const Tenants = () => {
                             <div>
                               <div className="font-medium text-foreground">{tenant.name}</div>
                               <div className="text-sm text-muted-foreground">
-                                {tenant.status === 'inactive' ? 'N/A' : (tenant.properties && tenant.properties.length > 0 ? (
-                                  <div className="flex items-center gap-1">
-                                    <span>{tenant.properties[0].name}</span>
-                                    <Badge variant="secondary" className="text-xs">Assigned</Badge>
-                                  </div>
-                                ) : 'Unassigned')}
+                              {tenant.status === 'inactive' ? 'N/A' : (tenant.properties?.[0]?.name || 'Unassigned')}
                               </div>
                             </div>
                           </div>
