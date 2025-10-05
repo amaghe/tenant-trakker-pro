@@ -64,12 +64,12 @@ const QuickPaymentRequest = ({
             <Input value={phoneNumber} disabled className="bg-muted" />
           </div>
           <div className="space-y-2">
-            <Label>Amount (₦)</Label>
+            <Label>Amount (R₣)</Label>
             <Input
               type="number"
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
-              placeholder={`Default: ₦${defaultAmount.toLocaleString()}`}
+              placeholder={`Default: R₣${defaultAmount.toLocaleString()}`}
             />
             <p className="text-xs text-muted-foreground">
               Invoice will be sent to tenant's phone via MTN MoMo.
