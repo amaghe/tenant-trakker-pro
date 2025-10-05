@@ -30,7 +30,7 @@ const Dashboard = () => {
       },
       {
         title: "Monthly Revenue",
-        value: `₦${summary.monthlyRevenue.toLocaleString()}`,
+        value: `R₣${summary.monthlyRevenue.toLocaleString()}`,
         change: `This month`,
         icon: DollarSign,
         positive: true,
@@ -58,7 +58,7 @@ const Dashboard = () => {
       .map(payment => ({
         tenant: payment.tenant?.name || 'Unknown',
         property: payment.property?.name || 'Unknown',
-        amount: `₦${payment.amount.toLocaleString()}`,
+        amount: `R₣${payment.amount.toLocaleString()}`,
         status: payment.status,
         date: payment.paid_date ? new Date(payment.paid_date).toLocaleDateString() : new Date(payment.created_at || '').toLocaleDateString()
       })),
@@ -72,7 +72,7 @@ const Dashboard = () => {
       .map(payment => ({
         tenant: payment.tenant?.name || 'Unknown',
         property: payment.property?.name || 'Unknown', 
-        amount: `₦${payment.amount.toLocaleString()}`,
+        amount: `R₣${payment.amount.toLocaleString()}`,
         dueDate: new Date(payment.due_date).toLocaleDateString()
       })),
     [payments]
