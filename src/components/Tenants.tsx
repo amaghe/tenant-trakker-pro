@@ -26,7 +26,7 @@ const Tenants = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const { properties, refetch } = useProperties();
+ 
 
   // Helper function to get recent payment status for a tenant
   const getTenantPaymentStatus = (tenantId: string) => {
@@ -139,10 +139,15 @@ const Tenants = () => {
   const totalRent = tenants.reduce((sum, t) => sum + t.rent, 0);
   
   //Helper
-  const getAssignedPropertyName = (tenantId: string): string => {
-  const assignedProperty = properties.find(p => p.tenant_id === tenantId);
-  return assignedProperty?.name || 'Unassigned';
-};
+const { properties, refetch: refetchProperties } = useProperties(); 
+const propertyByTenantId = useMemo(() => {
+  const map = new Map<string, { id: string; name: string }>();
+  for (const p of properties) 
+    if (p.tenant_id) map.set(p.tenant_id, { id: p.id, name: p.name });
+  return map;
+}, [properties]);
+
+const getAssignedPropertyName = (tenantId: string) => propertyByTenantId.get(tenantId)?.name ?? 'Unassigned';
 
 
   return (
@@ -271,7 +276,7 @@ const Tenants = () => {
                             <div>
                               <div className="font-medium text-foreground">{tenant.name}</div>
                               <div className="text-sm text-muted-foreground">
-                                {tenant.status === 'inactive' ? 'N/A' : getAssignedPropertyName(tenant.id) || 'Unassigned'}
+                                 {tenant.status === 'inactive' ? 'N/A' : getAssignedPropertyName(tenant.id)}
                               </div>
                             </div>
                           </div>
