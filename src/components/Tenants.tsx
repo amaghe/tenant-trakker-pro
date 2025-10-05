@@ -262,7 +262,7 @@ const Tenants = () => {
                             <div>
                               <div className="font-medium text-foreground">{tenant.name}</div>
                               <div className="text-sm text-muted-foreground">
-                               {tenant.status === 'inactive' ? 'N/A' : (tenant.properties || 'Unassigned1')}
+                               {tenant.status === 'inactive' ? 'N/A' : (tenant.properties || 'Unassigned')}
                               </div>
                             </div>
                           </div>
