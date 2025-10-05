@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, Plus, Trash2, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -24,14 +25,14 @@ interface TenantFormDialogProps {
 
 export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }: TenantFormDialogProps) {
   const [open, setOpen] = useState(false);
-  const { properties } = useProperties();
+  const { properties, refetch } = useProperties();
   const { toast } = useToast();
   const [uploading, setUploading] = useState({ id: false, lease: false });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    property_ids: [] as string[],
+    property_id: '' as string,
     rent: '',
     deposit: '',
     status: 'active' as 'active' | 'inactive' | 'overdue' | 'pending',
@@ -49,7 +50,7 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
         name: tenant.name || '',
         email: tenant.email || '',
         phone: tenant.phone || '',
-        property_ids: tenant.properties?.map(p => p.id) || [],
+        property_id: tenant.properties?.[0]?.id || '',
         rent: tenant.rent?.toString() || '',
         deposit: tenant.deposit?.toString() || '',
         status: tenant.status || 'active',
@@ -65,7 +66,7 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
         name: '',
         email: '',
         phone: '',
-        property_ids: [],
+        property_id: '',
         rent: '',
         deposit: '',
         status: 'active' as 'active' | 'inactive' | 'overdue' | 'pending',
@@ -78,6 +79,12 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
       });
     }
   }, [tenant, open]);
+
+  useEffect(() => {
+    if (open) {
+      refetch(); // Ensure we have latest property data
+    }
+  }, [open, refetch]);
 
   const handleFileUpload = async (file: File, type: 'id' | 'lease') => {
     const bucketName = type === 'id' ? 'tenant-documents' : 'lease-documents';
@@ -214,59 +221,36 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="property">Properties</Label>
+            <Label htmlFor="property">Property</Label>
             {formData.status === 'inactive' ? (
               <Input value="N/A" disabled />
             ) : (
-              <div className="space-y-2">
-                {formData.property_ids.map((propertyId) => {
-                  const property = properties.find(p => p.id === propertyId);
-                  return property ? (
-                    <div key={propertyId} className="flex items-center justify-between p-2 border rounded">
-                      <span className="text-sm">{property.name} - {property.address}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setFormData({
-                          ...formData,
-                          property_ids: formData.property_ids.filter(id => id !== propertyId)
-                        })}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ) : null;
-                })}
-                <Select 
-                  value="" 
-                  onValueChange={(value) => {
-                    if (value && !formData.property_ids.includes(value)) {
-                      setFormData({...formData, property_ids: [...formData.property_ids, value]});
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Add property" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties
-                      .filter(p => 
-                        // Show if property is unassigned
-                        !p.tenant_id || 
-                        // Show if property is already assigned to this tenant
-                        (tenant && p.tenant_id === tenant.id) ||
-                        // Show if property is in the current selection
-                        formData.property_ids.includes(p.id)
-                      )
-                      .map((property) => (
+              <Select 
+                value={formData.property_id} 
+                onValueChange={(value) => setFormData({...formData, property_id: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select property" />
+                </SelectTrigger>
+                <SelectContent>
+                  {properties
+                    .filter(p => 
+                      !p.tenant_id || 
+                      (tenant && p.tenant_id === tenant.id)
+                    )
+                    .map((property) => {
+                      const isAssigned = property.tenant_id === tenant?.id;
+                      return (
                         <SelectItem key={property.id} value={property.id}>
-                          {property.name} - {property.address}
+                          <div className="flex items-center gap-2">
+                            <span>{property.name} - {property.address}</span>
+                            {isAssigned && <Badge variant="outline" className="ml-2">Assigned</Badge>}
+                          </div>
                         </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                      );
+                    })}
+                </SelectContent>
+              </Select>
             )}
           </div>
 

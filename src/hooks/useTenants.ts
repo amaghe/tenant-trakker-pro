@@ -78,8 +78,8 @@ export const useTenants = () => {
 
   const addTenant = async (tenantData: Omit<Tenant, 'id'>) => {
     try {
-      // Extract property_ids before inserting tenant
-      const { property_ids, ...cleanTenantData } = tenantData as any;
+      // Extract property_id before inserting tenant
+      const { property_id, ...cleanTenantData } = tenantData as any;
       
       const insertData = {
         ...cleanTenantData,
@@ -94,15 +94,15 @@ export const useTenants = () => {
 
       if (error) throw error;
 
-      // Now assign properties to this tenant
-      if (property_ids && property_ids.length > 0) {
+      // Now assign property to this tenant
+      if (property_id) {
         const { error: propertyError } = await supabase
           .from('properties')
           .update({ tenant_id: data.id })
-          .in('id', property_ids);
+          .eq('id', property_id);
 
         if (propertyError) {
-          console.error('Error assigning properties:', propertyError);
+          console.error('Error assigning property:', propertyError);
           // Don't throw - tenant was created successfully
         }
       }
@@ -127,7 +127,7 @@ export const useTenants = () => {
   const updateTenant = async (id: string, updates: Partial<Tenant>) => {
     try {
       // Remove joined fields and read-only fields that shouldn't be updated
-      const { properties, created_at, updated_at, property_ids, ...cleanUpdates } = updates as any;
+      const { properties, created_at, updated_at, property_id, ...cleanUpdates } = updates as any;
       
       const updateData = {
         ...cleanUpdates,
@@ -143,23 +143,23 @@ export const useTenants = () => {
 
       if (error) throw error;
 
-      // Handle property assignments
-      if (property_ids !== undefined) {
-        // First, unassign all properties currently assigned to this tenant
+      // Handle property assignment
+      if (property_id !== undefined) {
+        // First, unassign current property if any
         await supabase
           .from('properties')
           .update({ tenant_id: null })
           .eq('tenant_id', id);
 
-        // Then assign the selected properties to this tenant
-        if (property_ids.length > 0) {
+        // Then assign the new property if one was selected
+        if (property_id) {
           const { error: propertyError } = await supabase
             .from('properties')
             .update({ tenant_id: id })
-            .in('id', property_ids);
+            .eq('id', property_id);
 
           if (propertyError) {
-            console.error('Error assigning properties:', propertyError);
+            console.error('Error assigning property:', propertyError);
           }
         }
       }

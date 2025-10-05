@@ -251,8 +251,11 @@ export default function TenantDetail() {
                 <div className="space-y-2">
                   {tenant?.properties && tenant.properties.length > 0 ? (
                     tenant.properties.map((property) => (
-                      <div key={property.id} className="flex items-center justify-between p-2 border rounded">
-                        <span className="text-sm">{property.name} - {property.address}</span>
+                      <div key={property.id} className="flex items-center justify-between p-2 border rounded bg-secondary/10">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{property.name} - {property.address}</span>
+                          <Badge variant="secondary" className="text-xs">Assigned</Badge>
+                        </div>
                       </div>
                     ))
                   ) : (
