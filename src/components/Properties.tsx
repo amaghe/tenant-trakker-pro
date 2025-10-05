@@ -133,7 +133,7 @@ const Properties = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-foreground">
-                    ₦{property.rent.toLocaleString()}/mo
+                    {property.rent.toLocaleString()}/mo
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {property.tenant || '—'}
