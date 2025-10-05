@@ -137,6 +137,12 @@ const Tenants = () => {
   const activeTenantsCount = tenants.filter(t => t.status === 'active').length;
   const overdueTenantsCount = tenants.filter(t => t.status === 'overdue').length;
   const totalRent = tenants.reduce((sum, t) => sum + t.rent, 0);
+  //Helper
+  const getAssignedPropertyName = (tenantId: string): string => {
+  const assignedProperty = properties.find(p => p.tenant_id === tenantId);
+  return assignedProperty?.name || 'Unassigned';
+};
+
 
   return (
     <div className="space-y-6">
