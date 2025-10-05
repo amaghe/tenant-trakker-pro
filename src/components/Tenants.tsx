@@ -218,7 +218,7 @@ const getAssignedPropertyName = (tenantId: string) => propertyByTenantId.get(ten
             <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">₦{totalRent.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-foreground">R₣{totalRent.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-1">Expected monthly</p>
           </CardContent>
         </Card>
@@ -355,12 +355,12 @@ const getAssignedPropertyName = (tenantId: string) => propertyByTenantId.get(ten
                                     <Input value={tenant.phone} disabled className="bg-muted" />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label>Amount (₦)</Label>
+                                    <Label>Amount R₣</Label>
                                     <Input
                                       type="number"
                                       value={paymentAmount || tenant.rent}
                                       onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                                      placeholder={`Default: ₦${tenant.rent.toLocaleString()}`}
+                                      placeholder={`Default: R₣${tenant.rent.toLocaleString()}`}
                                     />
                                     <p className="text-xs text-muted-foreground">
                                       Default is monthly rent amount. You can change it for custom amounts.
