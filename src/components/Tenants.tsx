@@ -137,6 +137,7 @@ const Tenants = () => {
   const activeTenantsCount = tenants.filter(t => t.status === 'active').length;
   const overdueTenantsCount = tenants.filter(t => t.status === 'overdue').length;
   const totalRent = tenants.reduce((sum, t) => sum + t.rent, 0);
+  
   //Helper
   const getAssignedPropertyName = (tenantId: string): string => {
   const assignedProperty = properties.find(p => p.tenant_id === tenantId);
@@ -270,7 +271,7 @@ const Tenants = () => {
                             <div>
                               <div className="font-medium text-foreground">{tenant.name}</div>
                               <div className="text-sm text-muted-foreground">
-                                 {tenant.status === 'inactive' ? 'N/A': (tenant.properties && tenant.properties.length > 0 ? tenant.properties.map(p => p.name).join(', '): 'Unassigned')}
+                                 {tenant.status === 'inactive' ? 'N/A' : getAssignedPropertyName(tenant.id)|| 'Unassigned')}
                               </div>
                             </div>
                           </div>
