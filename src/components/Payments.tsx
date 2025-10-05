@@ -278,7 +278,7 @@ const Payments = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              ₦{completedPayments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
+              R₣{completedPayments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
             </div>
             <p className="text-xs text-success mt-1">{completedPayments.length} payments</p>
           </CardContent>
@@ -293,7 +293,7 @@ const Payments = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              ₦{pendingPayments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
+              R₣{pendingPayments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">{pendingPayments.length} payments</p>
           </CardContent>
@@ -358,7 +358,7 @@ const Payments = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-xl font-bold text-foreground">₦{payment.amount.toLocaleString()}</p>
+                          <p className="text-xl font-bold text-foreground">R₣{payment.amount.toLocaleString()}</p>
                           <div className="flex items-center space-x-2 mt-1">
                             <Badge variant="outline" className="bg-success/10 text-success border-success/20">
                               {payment.status}
@@ -408,7 +408,7 @@ const Payments = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-xl font-bold text-foreground">₦{payment.amount.toLocaleString()}</p>
+                          <p className="text-xl font-bold text-foreground">R₣{payment.amount.toLocaleString()}</p>
                            <div className="flex items-center space-x-2 mt-1">
                               <Badge 
                                 variant={getStatusColor(payment.status)}
