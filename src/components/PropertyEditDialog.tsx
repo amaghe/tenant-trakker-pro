@@ -165,7 +165,7 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="rent" className="text-sm font-medium text-foreground">
-                Monthly Rent (₦)
+                Monthly Rent (R₣)
               </Label>
               <Input
                 id="rent"
