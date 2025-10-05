@@ -26,6 +26,7 @@ const Tenants = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const { properties, refetch } = useProperties();
 
   // Helper function to get recent payment status for a tenant
   const getTenantPaymentStatus = (tenantId: string) => {
