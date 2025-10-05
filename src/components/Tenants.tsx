@@ -26,7 +26,7 @@ const Tenants = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
- 
+ const { properties, refetch: refetchProperties } = useProperties();
 
   // Helper function to get recent payment status for a tenant
   const getTenantPaymentStatus = (tenantId: string) => {
@@ -35,7 +35,16 @@ const Tenants = () => {
       .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())[0];
     return recentPayment;
   };
+  //Helper
+const propertyByTenantId = useMemo(() => {
+  const map = new Map<string, { id: string; name: string }>();
+  for (const p of properties) 
+    if (p.tenant_id) map.set(p.tenant_id, { id: p.id, name: p.name });
+  return map;
+}, [properties]);
 
+const getAssignedPropertyName = (tenantId: string) => propertyByTenantId.get(tenantId)?.name ?? 'Unassigned';
+  
   const handleAddTenant = async (tenantData: any) => {
     setFormLoading(true);
     try {
@@ -138,17 +147,6 @@ const Tenants = () => {
   const overdueTenantsCount = tenants.filter(t => t.status === 'overdue').length;
   const totalRent = tenants.reduce((sum, t) => sum + t.rent, 0);
   
-  //Helper
-const { properties, refetch: refetchProperties } = useProperties(); 
-const propertyByTenantId = useMemo(() => {
-  const map = new Map<string, { id: string; name: string }>();
-  for (const p of properties) 
-    if (p.tenant_id) map.set(p.tenant_id, { id: p.id, name: p.name });
-  return map;
-}, [properties]);
-
-const getAssignedPropertyName = (tenantId: string) => propertyByTenantId.get(tenantId)?.name ?? 'Unassigned';
-
 
   return (
     <div className="space-y-6">
