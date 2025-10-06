@@ -107,7 +107,7 @@ export const useTenants = () => {
         }
       }
 
-      await fetchTenants(); // Refetch to get property data
+      await fetchTenants(); // Refetch to get property data and ensure UI updates
       toast({
         title: "Success",
         description: "Tenant added successfully",
