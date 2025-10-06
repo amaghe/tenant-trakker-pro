@@ -24,7 +24,7 @@ export interface Tenant {
   notes?: string;
   deposit?: number;
   lease_document_url?: string;
-  properties?: tenant.properties;
+  properties?: properties;
   created_at?: string;
   updated_at?: string;
 }
