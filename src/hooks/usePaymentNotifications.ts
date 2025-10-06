@@ -21,7 +21,7 @@ export const usePaymentNotifications = () => {
           if (payment.payment_method === 'MTN Mobile Money' && payment.status === 'pending') {
             toast({
               title: "Payment Request Sent",
-              description: `MTN MoMo payment request sent for ₦${payment.amount.toLocaleString()}`,
+              description: `MTN MoMo payment request sent for R₣${payment.amount.toLocaleString()}`,
               duration: 5000,
             });
           }
@@ -42,7 +42,7 @@ export const usePaymentNotifications = () => {
           if (oldPayment.status !== 'paid' && newPayment.status === 'paid') {
             toast({
               title: "Payment Received",
-              description: `Payment of ₦${newPayment.amount.toLocaleString()} has been received`,
+              description: `Payment of R₣${newPayment.amount.toLocaleString()} has been received`,
               duration: 5000,
             });
           }
@@ -51,7 +51,7 @@ export const usePaymentNotifications = () => {
           if (oldPayment.status !== 'overdue' && newPayment.status === 'overdue') {
             toast({
               title: "Payment Overdue",
-              description: `Payment of ₦${newPayment.amount.toLocaleString()} is now overdue`,
+              description: `Payment of R₣${newPayment.amount.toLocaleString()} is now overdue`,
               variant: "destructive",
               duration: 5000,
             });
