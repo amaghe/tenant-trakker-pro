@@ -316,7 +316,7 @@ const Invoices = () => {
             </div>
             
             <div className="space-y-2">
-              <Label>Amount (₦)</Label>
+              <Label>Amount (R₣)</Label>
               <Input
                 type="number"
                 value={amount || ''}
