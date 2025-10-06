@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Edit2, Download, Upload, Plus, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,12 @@ export default function TenantDetail() {
       setFormData(foundTenant);
     }
   }, [id, tenants]);
+
+  // Find property assigned to this tenant
+  const assignedProperty = useMemo(() => {
+    if (!tenant?.id) return null;
+    return properties.find(p => p.tenant_id === tenant.id);
+  }, [properties, tenant?.id]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -249,15 +255,13 @@ export default function TenantDetail() {
                 <Input value="N/A" disabled />
               ) : (
                 <div className="space-y-2">
-                  {tenant?.properties && tenant.properties.length > 0 ? (
-                    tenant.properties.map((property) => (
-                      <div key={property.id} className="flex items-center justify-between p-2 border rounded bg-secondary/10">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{property.name} - {property.address}</span>
-                          <Badge variant="secondary" className="text-xs">Assigned</Badge>
-                        </div>
+                  {assignedProperty ? (
+                    <div className="flex items-center justify-between p-2 border rounded bg-secondary/10">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{assignedProperty.name} - {assignedProperty.address}</span>
+                        <Badge variant="secondary" className="text-xs">Assigned</Badge>
                       </div>
-                    ))
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">No properties assigned</p>
                   )}

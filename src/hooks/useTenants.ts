@@ -45,10 +45,7 @@ export const useTenants = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('tenants')
-        .select(`
-          *,
-          properties(id, name, address)
-        `);
+        .select('*');
 
       if (error) throw error;
 
@@ -58,12 +55,7 @@ export const useTenants = () => {
         emergency_contacts: tenant.emergency_contacts ? 
           (Array.isArray(tenant.emergency_contacts) ? 
             tenant.emergency_contacts as unknown as EmergencyContact[] : 
-            JSON.parse(tenant.emergency_contacts as string) as EmergencyContact[]) : [],
-        properties: Array.isArray(tenant.properties) ? tenant.properties.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          address: p.address
-        })) : []
+            JSON.parse(tenant.emergency_contacts as string) as EmergencyContact[]) : []
       })) || [];
 
       setTenants(formattedTenants);
