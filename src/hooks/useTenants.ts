@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
+import { useProperties } from '@/hooks/useProperties';
+import { tenant } from '@/hooks/tenant';
 export interface EmergencyContact {
   name: string;
   phone?: string;
