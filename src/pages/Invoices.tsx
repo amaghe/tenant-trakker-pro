@@ -409,7 +409,7 @@ const Invoices = () => {
                       {payment.property?.name || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      ₦{payment.amount.toLocaleString()}
+                      R₣{payment.amount.toLocaleString()}
                     </TableCell>
                     <TableCell>
                       {(() => {
