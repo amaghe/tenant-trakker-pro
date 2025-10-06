@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useProperties } from '@/hooks/useProperties';
+import { useProperties, type Property } from '@/hooks/useProperties';
 
 export interface EmergencyContact {
   name: string;
   phone?: string;
   email?: string;
+}
+
+export interface TenantProperty {
+  id: string;
+  name: string;
+  address: string;
 }
 
 export interface Tenant {
@@ -24,7 +30,7 @@ export interface Tenant {
   notes?: string;
   deposit?: number;
   lease_document_url?: string;
-  properties?: properties;
+  properties?: TenantProperty[];
   created_at?: string;
   updated_at?: string;
 }
