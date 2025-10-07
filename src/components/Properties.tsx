@@ -136,7 +136,7 @@ const Properties = () => {
                     {property.rent.toLocaleString()}/mo
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {property.tenant || '—'}
+                    {property.tenant_id && property.tenant ? property.tenant : '—'}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
