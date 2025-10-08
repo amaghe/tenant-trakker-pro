@@ -30,7 +30,7 @@ export const useProperties = () => {
         .from('properties')
         .select(`
           *,
-          tenants(name)
+          tenants:tenant_id(name)
         `);
 
       if (error) throw error;
@@ -38,7 +38,7 @@ export const useProperties = () => {
       const formattedProperties = data?.map(property => ({
         ...property,
         status: property.status as 'available' | 'occupied',
-        tenant: property.tenants?.[0]?.name || undefined
+        tenant: property.tenants?.name || undefined
       })) || [];
 
       setProperties(formattedProperties);
