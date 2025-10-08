@@ -225,10 +225,17 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
             {formData.status === 'inactive' ? (
               <Input value="N/A" disabled />
             ) : (
-              <Select 
-                value={formData.property_id} 
-                onValueChange={(value) => setFormData({...formData, property_id: value})}
-              >
+          <Select 
+            value={formData.property_id} 
+            onValueChange={(value) => {
+              const selectedProperty = properties.find(p => p.id === value);
+              setFormData({
+                ...formData, 
+                property_id: value,
+                rent: selectedProperty ? selectedProperty.rent.toString() : formData.rent
+              });
+            }}
+          >
                 <SelectTrigger>
                   <SelectValue placeholder="Select property" />
                 </SelectTrigger>
@@ -256,15 +263,17 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="rent">Monthly Rent</Label>
+              <Label htmlFor="rent">Monthly Rent (Auto-filled)</Label>
               <Input
                 id="rent"
                 type="number"
-                placeholder="Enter monthly rent"
+                placeholder={formData.property_id ? "Auto-filled from property" : "Select a property first"}
                 value={formData.rent}
-                onChange={(e) => setFormData({...formData, rent: e.target.value})}
+                disabled={true}
+                className="bg-secondary/20"
                 required
               />
+              <p className="text-xs text-muted-foreground">Rent is automatically set based on the selected property</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="deposit">Security Deposit (Optional)</Label>
