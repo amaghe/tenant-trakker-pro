@@ -180,17 +180,15 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
             
             <div className="space-y-2">
               <Label htmlFor="status" className="text-sm font-medium text-foreground">
-                Status
+                Status (Auto-set)
               </Label>
-              <Select value={formData.status} onValueChange={(value: 'available' | 'occupied') => handleInputChange("status", value)}>
-                <SelectTrigger className="bg-background border-border">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="available">Available</SelectItem>
-                  <SelectItem value="occupied">Occupied</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="status"
+                value={property?.tenant_id ? "Occupied" : "Available"}
+                disabled={true}
+                className="bg-secondary/20 capitalize"
+              />
+              <p className="text-xs text-muted-foreground">Status is automatically set based on tenant assignment</p>
             </div>
           </div>
         </div>
