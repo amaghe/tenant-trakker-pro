@@ -50,7 +50,7 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
         name: tenant.name || '',
         email: tenant.email || '',
         phone: tenant.phone || '',
-        property_id: tenant.properties?.[0]?.id || '',
+        property_id: properties.find(p => p.tenant_id === tenant.id)?.id || '',
         rent: tenant.rent?.toString() || '',
         deposit: tenant.deposit?.toString() || '',
         status: tenant.status || 'active',

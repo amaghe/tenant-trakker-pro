@@ -284,14 +284,17 @@ export default function TenantDetail() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="rent">Monthly Rent</Label>
+                <Label htmlFor="rent">Monthly Rent (Auto-set)</Label>
                 <Input
                   id="rent"
                   type="number"
-                  value={formData.rent || ''}
-                  onChange={(e) => handleInputChange('rent', parseFloat(e.target.value))}
-                  disabled={!isEditing}
+                  value={assignedProperty?.rent || formData.rent || ''}
+                  disabled={true}
+                  className="bg-secondary/20"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Rent is automatically set from the assigned property
+                </p>
               </div>
               <div>
                 <Label htmlFor="deposit">Security Deposit</Label>
