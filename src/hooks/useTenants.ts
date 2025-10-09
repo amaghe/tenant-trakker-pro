@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useProperties, type Property } from '@/hooks/useProperties';
 
 export interface EmergencyContact {
   name: string;
@@ -89,7 +88,7 @@ export const useTenants = () => {
 
       if (error) throw error;
 
-      // Now assign property to this tenant
+      // Now assign property to this tenant (updates status via trigger)
       if (property_id) {
         const { error: propertyError } = await supabase
           .from('properties')
@@ -98,11 +97,15 @@ export const useTenants = () => {
 
         if (propertyError) {
           console.error('Error assigning property:', propertyError);
-          // Don't throw - tenant was created successfully
+          toast({
+            title: "Warning",
+            description: "Tenant created but property assignment failed",
+            variant: "destructive",
+          });
         }
       }
 
-      await fetchTenants(); // Refetch to get property data and ensure UI updates
+      await fetchTenants();
       toast({
         title: "Success",
         description: "Tenant added successfully",
@@ -138,15 +141,19 @@ export const useTenants = () => {
 
       if (error) throw error;
 
-      // Handle property assignment
+      // Handle property assignment/reassignment
       if (property_id !== undefined) {
-        // First, unassign current property if any
-        await supabase
+        // First, unassign current property if any (sets status to 'available' via trigger)
+        const { error: unassignError } = await supabase
           .from('properties')
           .update({ tenant_id: null })
           .eq('tenant_id', id);
 
-        // Then assign the new property if one was selected
+        if (unassignError) {
+          console.error('Error unassigning previous property:', unassignError);
+        }
+
+        // Then assign the new property if one was selected (sets status to 'occupied' via trigger)
         if (property_id) {
           const { error: propertyError } = await supabase
             .from('properties')
@@ -155,11 +162,16 @@ export const useTenants = () => {
 
           if (propertyError) {
             console.error('Error assigning property:', propertyError);
+            toast({
+              title: "Warning",
+              description: "Tenant updated but property assignment failed",
+              variant: "destructive",
+            });
           }
         }
       }
 
-      await fetchTenants(); // Refetch to get updated property data
+      await fetchTenants();
       toast({
         title: "Success",
         description: "Tenant updated successfully",

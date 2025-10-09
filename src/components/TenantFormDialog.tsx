@@ -25,7 +25,7 @@ interface TenantFormDialogProps {
 
 export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }: TenantFormDialogProps) {
   const [open, setOpen] = useState(false);
-  const { properties, refetch } = useProperties();
+  const { properties, refetch: refetchProperties } = useProperties();
   const { toast } = useToast();
   const [uploading, setUploading] = useState({ id: false, lease: false });
   const [formData, setFormData] = useState({
@@ -82,9 +82,9 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
 
   useEffect(() => {
     if (open) {
-      refetch(); // Ensure we have latest property data
+      refetchProperties(); // Ensure we have latest property data
     }
-  }, [open, refetch]);
+  }, [open, refetchProperties]);
 
   const handleFileUpload = async (file: File, type: 'id' | 'lease') => {
     const bucketName = type === 'id' ? 'tenant-documents' : 'lease-documents';
@@ -154,6 +154,8 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
     };
     
     await onSubmit(tenantData);
+    // Refetch properties to ensure status is updated across all views
+    refetchProperties();
     setOpen(false);
   };
 
@@ -228,18 +230,28 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
           <Select 
             value={formData.property_id} 
             onValueChange={(value) => {
-              const selectedProperty = properties.find(p => p.id === value);
-              setFormData({
-                ...formData, 
-                property_id: value,
-                rent: selectedProperty ? selectedProperty.rent.toString() : formData.rent
-              });
+              // Allow deselecting (empty string means unassign)
+              if (value === '') {
+                setFormData({
+                  ...formData, 
+                  property_id: '',
+                  rent: tenant?.rent.toString() || ''
+                });
+              } else {
+                const selectedProperty = properties.find(p => p.id === value);
+                setFormData({
+                  ...formData, 
+                  property_id: value,
+                  rent: selectedProperty ? selectedProperty.rent.toString() : formData.rent
+                });
+              }
             }}
           >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select property" />
+                  <SelectValue placeholder="Select property or leave empty" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">None (Unassign)</SelectItem>
                   {properties
                     .filter(p => 
                       !p.tenant_id || 
