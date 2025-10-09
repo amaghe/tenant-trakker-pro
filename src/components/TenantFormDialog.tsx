@@ -228,10 +228,10 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
               <Input value="N/A" disabled />
             ) : (
           <Select 
-            value={formData.property_id} 
+            value={formData.property_id || 'none'} 
             onValueChange={(value) => {
-              // Allow deselecting (empty string means unassign)
-              if (value === '') {
+              // Handle unassignment with special "none" value
+              if (value === 'none') {
                 setFormData({
                   ...formData, 
                   property_id: '',
@@ -248,10 +248,10 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
             }}
           >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select property or leave empty" />
+                  <SelectValue placeholder="Select property or leave unassigned" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None (Unassign)</SelectItem>
+                  <SelectItem value="none">None (Unassign)</SelectItem>
                   {properties
                     .filter(p => 
                       !p.tenant_id || 
