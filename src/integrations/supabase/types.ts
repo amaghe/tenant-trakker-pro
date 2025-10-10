@@ -155,6 +155,7 @@ export type Database = {
           bathrooms: number
           bedrooms: number
           created_at: string
+          deposit: number | null
           id: string
           name: string
           rent: number
@@ -169,6 +170,7 @@ export type Database = {
           bathrooms: number
           bedrooms: number
           created_at?: string
+          deposit?: number | null
           id?: string
           name: string
           rent: number
@@ -183,6 +185,7 @@ export type Database = {
           bathrooms?: number
           bedrooms?: number
           created_at?: string
+          deposit?: number | null
           id?: string
           name?: string
           rent?: number
@@ -206,7 +209,6 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
-          deposit: number | null
           email: string
           emergency_contacts: Json | null
           id: string
@@ -224,7 +226,6 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
-          deposit?: number | null
           email: string
           emergency_contacts?: Json | null
           id?: string
@@ -242,7 +243,6 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
-          deposit?: number | null
           email?: string
           emergency_contacts?: Json | null
           id?: string

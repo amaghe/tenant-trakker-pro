@@ -22,6 +22,7 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
     bathrooms: 1,
     size: 0,
     rent: 0,
+    deposit: 0,
     status: "available" as 'available' | 'occupied',
   });
 
@@ -35,6 +36,7 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
         bathrooms: property.bathrooms,
         size: property.size,
         rent: property.rent,
+        deposit: property.deposit || 0,
         status: property.status,
       });
     } else {
@@ -46,6 +48,7 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
         bathrooms: 1,
         size: 0,
         rent: 0,
+        deposit: 0,
         status: "available",
       });
     }
@@ -179,17 +182,32 @@ const PropertyEditDialog = ({ property, isOpen, onClose, onSave }: PropertyEditD
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="status" className="text-sm font-medium text-foreground">
-                Status (Auto-set)
+              <Label htmlFor="deposit" className="text-sm font-medium text-foreground">
+                Security Deposit (R₣)
               </Label>
               <Input
-                id="status"
-                value={property?.tenant_id ? "Occupied" : "Available"}
-                disabled={true}
-                className="bg-secondary/20 capitalize"
+                id="deposit"
+                type="number"
+                min="0"
+                value={formData.deposit}
+                onChange={(e) => handleInputChange("deposit", parseInt(e.target.value) || 0)}
+                placeholder="Enter deposit amount"
+                className="bg-background border-border"
               />
-              <p className="text-xs text-muted-foreground">Status is automatically set based on tenant assignment</p>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status" className="text-sm font-medium text-foreground">
+              Status (Auto-set)
+            </Label>
+            <Input
+              id="status"
+              value={property?.tenant_id ? "Occupied" : "Available"}
+              disabled={true}
+              className="bg-secondary/20 capitalize"
+            />
+            <p className="text-xs text-muted-foreground">Status is automatically set based on tenant assignment</p>
           </div>
         </div>
 

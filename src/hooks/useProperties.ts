@@ -11,6 +11,7 @@ export interface Property {
   bathrooms: number;
   size: number;
   rent: number;
+  deposit: number;
   status: 'available' | 'occupied';
   tenant_id?: string;
   tenant?: string;
