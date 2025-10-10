@@ -34,7 +34,6 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
     phone: '',
     property_id: '' as string,
     rent: '',
-    deposit: '',
     status: 'active' as 'active' | 'inactive' | 'overdue' | 'pending',
     lease_start: '',
     lease_end: '',
@@ -52,7 +51,6 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
         phone: tenant.phone || '',
         property_id: properties.find(p => p.tenant_id === tenant.id)?.id || '',
         rent: tenant.rent?.toString() || '',
-        deposit: tenant.deposit?.toString() || '',
         status: tenant.status || 'active',
         lease_start: tenant.lease_start || '',
         lease_end: tenant.lease_end || '',
@@ -68,7 +66,6 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
         phone: '',
         property_id: '',
         rent: '',
-        deposit: '',
         status: 'active' as 'active' | 'inactive' | 'overdue' | 'pending',
         lease_start: '',
         lease_end: '',
@@ -150,7 +147,6 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
     const tenantData = {
       ...formData,
       rent: parseFloat(formData.rent),
-      deposit: formData.deposit ? parseFloat(formData.deposit) : undefined,
     };
     
     await onSubmit(tenantData);
@@ -288,14 +284,16 @@ export default function TenantFormDialog({ trigger, tenant, onSubmit, loading }:
               <p className="text-xs text-muted-foreground">Rent is automatically set based on the selected property</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="deposit">Security Deposit (Optional)</Label>
+              <Label htmlFor="deposit">Security Deposit (Auto-set)</Label>
               <Input
                 id="deposit"
                 type="number"
-                placeholder="Enter deposit amount"
-                value={formData.deposit}
-                onChange={(e) => setFormData({...formData, deposit: e.target.value})}
+                value={formData.property_id ? properties.find(p => p.id === formData.property_id)?.deposit || 0 : ''}
+                placeholder={formData.property_id ? "Auto-filled from property" : "N/A"}
+                disabled={true}
+                className="bg-secondary/20"
               />
+              <p className="text-xs text-muted-foreground">Deposit is automatically set based on the selected property</p>
             </div>
           </div>
 

@@ -297,15 +297,18 @@ export default function TenantDetail() {
                 </p>
               </div>
               <div>
-                <Label htmlFor="deposit">Security Deposit</Label>
+                <Label htmlFor="deposit">Security Deposit (Auto-set)</Label>
                 <Input
                   id="deposit"
                   type="number"
-                  value={formData.deposit || ''}
-                  onChange={(e) => handleInputChange('deposit', parseFloat(e.target.value))}
-                  disabled={!isEditing}
-                  placeholder="Optional"
+                  value={assignedProperty?.deposit || ''}
+                  placeholder={assignedProperty ? "From assigned property" : "N/A"}
+                  disabled={true}
+                  className="bg-secondary/20"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Deposit is automatically set from the assigned property
+                </p>
               </div>
             </div>
             
