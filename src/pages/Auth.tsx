@@ -29,14 +29,24 @@ const Auth = () => {
   useEffect(() => {
     const urlType = searchParams.get('type');
     
-    // Check if we're in password reset mode (user clicked reset link)
-    if (urlType === 'recovery' && user && session) {
+    // Also check hash parameters for Supabase auth tokens
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hashType = hashParams.get('type');
+    const accessToken = hashParams.get('access_token');
+    
+    // Check if we're in password reset mode (from query or hash)
+    if ((urlType === 'recovery' || hashType === 'recovery') && (user || accessToken)) {
       setIsPasswordResetMode(true);
+      
+      // Clean up the URL hash after processing
+      if (window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
       return; // Don't redirect, show password reset form
     }
     
     // Redirect authenticated users to dashboard (but not during password reset)
-    if (user && !isPasswordResetMode && urlType !== 'recovery') {
+    if (user && !isPasswordResetMode && urlType !== 'recovery' && hashType !== 'recovery') {
       navigate('/');
     }
   }, [user, session, navigate, searchParams, isPasswordResetMode]);
