@@ -43,9 +43,8 @@ const Auth = () => {
     if (urlType === 'recovery' || hashType === 'recovery') {
       setIsPasswordResetMode(true);
       
-      // If we have a token, Supabase will handle auth automatically
-      // If no token after a short delay, show error
-      if (!accessToken && !user) {
+      // Only show error if there's no token in the URL at all
+      if (!accessToken) {
         const timer = setTimeout(() => {
           if (!user) {
             setResetTokenError(true);
@@ -54,10 +53,6 @@ const Auth = () => {
         return () => clearTimeout(timer);
       }
       
-      // Clean up the URL hash after processing
-      if (window.location.hash) {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
       return; // Don't redirect, show password reset form
     }
     
@@ -127,6 +122,10 @@ const Auth = () => {
     const result = await updatePassword(newPassword);
     
     if (!result.error) {
+      // Clean up URL hash after successful password update
+      if (window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
       setIsPasswordResetMode(false);
       setNewPassword('');
       setConfirmNewPassword('');
