@@ -24,6 +24,10 @@ const Auth = () => {
   const { user, session, signIn, signUp, signInWithGoogle, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // Extract access token from URL hash (for password reset)
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const accessToken = hashParams.get('access_token');
 
   // Check for password reset flow and redirect authenticated users
   useEffect(() => {
@@ -121,7 +125,7 @@ const Auth = () => {
   };
 
   // Show password reset form if user is authenticated via reset link
-  if (isPasswordResetMode && user) {
+  if (isPasswordResetMode && (user || accessToken)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
         <Card className="w-full max-w-md">
