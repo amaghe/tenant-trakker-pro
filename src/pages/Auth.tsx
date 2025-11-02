@@ -21,6 +21,7 @@ const Auth = () => {
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [isPasswordResetMode, setIsPasswordResetMode] = useState(false);
+  const [resetTokenError, setResetTokenError] = useState(false);
   const { user, session, signIn, signUp, signInWithGoogle, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -38,9 +39,20 @@ const Auth = () => {
     const hashType = hashParams.get('type');
     const accessToken = hashParams.get('access_token');
     
-    // Check if we're in password reset mode (from query or hash)
-    if ((urlType === 'recovery' || hashType === 'recovery') && (user || accessToken)) {
+    // Check if we're in password reset mode
+    if (urlType === 'recovery' || hashType === 'recovery') {
       setIsPasswordResetMode(true);
+      
+      // If we have a token, Supabase will handle auth automatically
+      // If no token after a short delay, show error
+      if (!accessToken && !user) {
+        const timer = setTimeout(() => {
+          if (!user) {
+            setResetTokenError(true);
+          }
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
       
       // Clean up the URL hash after processing
       if (window.location.hash) {
@@ -124,8 +136,61 @@ const Auth = () => {
     setIsLoading(false);
   };
 
-  // Show password reset form if user is authenticated via reset link
-  if (isPasswordResetMode && (user || accessToken)) {
+  // Show password reset form if we're in recovery mode
+  if (isPasswordResetMode) {
+    // Show error if token is invalid/expired
+    if (resetTokenError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Building2 className="h-8 w-8 text-primary" />
+                <h1 className="text-2xl font-bold">Property Manager</h1>
+              </div>
+              <CardTitle>Reset Link Expired</CardTitle>
+              <CardDescription>
+                This password reset link has expired or is invalid
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => {
+                  setIsPasswordResetMode(false);
+                  setResetTokenError(false);
+                  navigate('/auth');
+                }} 
+                className="w-full"
+              >
+                Back to Sign In
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Show loading state while waiting for auth
+    if (!user && !accessToken) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Building2 className="h-8 w-8 text-primary" />
+                <h1 className="text-2xl font-bold">Property Manager</h1>
+              </div>
+              <CardTitle>Verifying Reset Link</CardTitle>
+              <CardDescription>
+                Please wait while we verify your password reset link...
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      );
+    }
+
+    // Show password reset form
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
         <Card className="w-full max-w-md">
@@ -149,6 +214,7 @@ const Auth = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
+                  minLength={6}
                 />
               </div>
               <div className="space-y-2">
@@ -159,12 +225,16 @@ const Auth = () => {
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
                   required
+                  minLength={6}
                 />
               </div>
+              {newPassword && confirmPassword && newPassword !== confirmNewPassword && (
+                <p className="text-sm text-destructive">Passwords do not match</p>
+              )}
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading || newPassword !== confirmNewPassword || !newPassword}
+                disabled={isLoading || newPassword !== confirmNewPassword || !newPassword || newPassword.length < 6}
               >
                 {isLoading ? "Updating password..." : "Update Password"}
               </Button>
