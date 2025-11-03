@@ -70,17 +70,18 @@ serve(async (req) => {
     }
 
     // Check if user has admin role
-    const { data: profile, error: profileError } = await authSupabase
-      .from('profiles')
+    const { data: userRole, error: roleError } = await authSupabase
+      .from('user_roles')
       .select('role')
-      .eq('id', user.id)
-      .single();
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
 
-    if (profileError || !profile || profile.role !== 'admin') {
+    if (roleError || !userRole) {
       await logDebug('error', 'Insufficient permissions', { 
         userId: user.id, 
-        role: profile?.role,
-        error: profileError 
+        hasAdminRole: !!userRole,
+        error: roleError 
       });
       return new Response(JSON.stringify({ 
         success: false, 
